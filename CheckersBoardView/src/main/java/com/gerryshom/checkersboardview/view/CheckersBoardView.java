@@ -598,9 +598,9 @@ public class CheckersBoardView extends View {
      */
     public void playOpponentMoveSequence(final MoveSequence moveSequence) {
 
-        for(int i = 0; i < moveSequence.getSteps().size(); i++) {
+        for(int i = 0; i < moveSequence.getMoves().size(); i++) {
 
-            final Move move = moveSequence.getSteps().get(i);
+            final Move move = moveSequence.getMoves().get(i);
 
             final int toRow = move.getToRow();
             final int toCol = move.getToCol();
@@ -611,7 +611,7 @@ public class CheckersBoardView extends View {
 
             final Piece piece = findPieceById(move.getPieceId());
 
-            playMove(piece, move, i == moveSequence.getSteps().size() - 1);
+            playMove(piece, move, i == moveSequence.getMoves().size() - 1);
 
         }
 
