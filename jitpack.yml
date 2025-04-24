@@ -4,5 +4,5 @@ before_install:
   - bash ./gradlew assembleRelease
 install:
   - FILE="CheckersBoardView/build/outputs/aar/CheckersBoardView-release.aar"
-  - mvn install:install-file -Dfile=$FILE -DgroupId=com.github.iamgerrshom -DartifactId=CheckersBoardView -Dversion=1.0.0 -Dpackaging=aar -DgeneratePom=true
+  - mvn install:install-file -Dfile=$FILE -DgroupId=com.github.iamgerryshom -DartifactId=CheckersBoardView -Dversion=1.0.0 -Dpackaging=aar -DgeneratePom=true
 

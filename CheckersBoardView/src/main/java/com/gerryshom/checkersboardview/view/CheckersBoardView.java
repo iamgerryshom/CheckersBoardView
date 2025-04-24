@@ -78,8 +78,6 @@ public class CheckersBoardView extends View {
     }
 
     public interface BoardListener {
-        default void onBoardPrepared(){}
-        default void onMove(final Move move){}
         default void onPieceCompletedMoveSequence(final MoveSequence moveSequence){}
         default void onActivePlayerSwitched(final String newActivePlayerId){}
         default void onPieceCaptured(final String capturedPiecePlayerId, final int remainingPieceCount){}

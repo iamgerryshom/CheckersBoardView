@@ -19,11 +19,12 @@ public class MoveSequence {
         this.destination = destination;
     }
 
-    public List<Move> getSteps() {
+    public List<Move> getMoves() {
         return moves;
     }
 
-    public void setSteps(List<Move> moves) {
+    public void setMoves(List<Move> moves) {
         this.moves = moves;
     }
 }
+
