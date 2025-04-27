@@ -23,6 +23,8 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        binding.checkersBoardView.setMyPlayerId("me");
+
         binding.checkersBoardView.resetBoard(
                 "me","me","other"
         );
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
     }
 
 }

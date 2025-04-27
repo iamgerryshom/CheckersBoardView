@@ -1,19 +1,21 @@
 package com.gerryshom.checkersboardview.model.board;
 
-import com.gerryshom.checkersboardview.model.player.User;
+import com.gerryshom.checkersboardview.model.player.Player;
 
 public class Piece {
     private String id;
     private int row;
     private int col;
     private String playerId;
-    private User player;
+    private Player player;
     private transient boolean king;
     private transient float centerX;
     private transient float centerY;
     private transient boolean highlighted;
     private String color;
     private boolean inCaptureChain;
+
+    public Piece() {}
 
     public boolean isInCaptureChain() {
         return inCaptureChain;
@@ -87,11 +89,11 @@ public class Piece {
         this.playerId = playerId;
     }
 
-    public User getPlayer() {
+    public Player getPlayer() {
         return player;
     }
 
-    public void setPlayer(User player) {
+    public void setPlayer(Player player) {
         this.player = player;
     }
 

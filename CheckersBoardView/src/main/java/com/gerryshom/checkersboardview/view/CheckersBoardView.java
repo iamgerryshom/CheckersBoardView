@@ -224,14 +224,13 @@ public class CheckersBoardView extends View {
         return true;
     }
 
-
     /**
      * ensures only active player can select a piece and only pieces that belong to the current player can be selected
      */
     private void onActionDown(final float touchX, final float touchY) {
 
         //checks if the current user is not the active player
-        //if(!activePlayerId.equals(myPlayerId)) return;
+        if(!activePlayerId.equals(myPlayerId)) return;
 
         final Piece piece = findTouchedPieceByTouchXAndY(touchX, touchY);
 
@@ -239,7 +238,7 @@ public class CheckersBoardView extends View {
             handleMove(touchX, touchY);
         } else {
             //checks if the piece does not belong to the current player
-            //if(!piece.getPlayerId().equals(myPlayerId)) return;
+            if(!piece.getPlayerId().equals(myPlayerId)) return;
             handlePieceSelection(piece);
         }
 
@@ -254,7 +253,7 @@ public class CheckersBoardView extends View {
         final Point newRowAndCol = calculateRowAndCol(touchX, touchY);
         final Point newCenterXAndY = calculateCellCenter(newRowAndCol.x, newRowAndCol.y);
 
-        final Move move = buildStep(touchedPiece, newRowAndCol, newCenterXAndY);
+        final Move move = buildMove(touchedPiece, newRowAndCol, newCenterXAndY);
 
         if (validateMove(move)) processMove(move, touchedPiece);
 
@@ -539,7 +538,7 @@ public class CheckersBoardView extends View {
     }
 
     /**
-     * returns id of the enemy player
+     * returns id of the opponent player
      * @param playerId id of the current player
      * @return id of the enemy player
      */
@@ -632,7 +631,7 @@ public class CheckersBoardView extends View {
         return row >= 0 && row < 8 && col >= 0 && col < 8; // 8x8 grid for standard checkers
     }
 
-    private Move buildStep(final Piece touchedPiece, final Point newRowAndCol, final Point newCenterXAndY) {
+    private Move buildMove(final Piece touchedPiece, final Point newRowAndCol, final Point newCenterXAndY) {
 
         final Move move = new Move();
         move.setId(UUID.randomUUID().toString());
@@ -899,6 +898,11 @@ public class CheckersBoardView extends View {
         return calculateCellCenter(rowCol.x, rowCol.y);
     }
 
+    /**
+     * resolves touch co-ordinates on the board into row and col on the board
+     * @param touchX touched x coordinate
+     * @param touchY touched y coordinate
+     */
     private Point calculateRowAndCol(
             final float touchX,
             final float touchY) {
@@ -928,6 +932,7 @@ public class CheckersBoardView extends View {
         outerPaint.setColor(Color.parseColor("#81C784")); // Light green
         outerPaint.setStyle(Paint.Style.STROKE);  // Stroke style (borders)
         outerPaint.setAlpha(255);  // Full opacity
+        outerPaint.setAntiAlias(true);
         outerPaint.setStrokeWidth(6f);  // Reduced border thickness for outer circle
 
         // Paint for the inner border circle (light green)
@@ -935,12 +940,14 @@ public class CheckersBoardView extends View {
         innerPaint.setColor(Color.parseColor("#81C784")); // Light green
         innerPaint.setStyle(Paint.Style.STROKE);  // Stroke style (borders)
         innerPaint.setAlpha(180);  // Full opacity
+        innerPaint.setAntiAlias(true);
         innerPaint.setStrokeWidth(3f);  // Reduced border thickness for inner circle (half the outer border thickness)
 
         // Paint for the filled inner circle (red)
         final Paint middlePaint = new Paint();
         middlePaint.setColor(Color.parseColor("#F44336")); // Red color
         middlePaint.setStyle(Paint.Style.FILL);  // Fill style for the circle
+        middlePaint.setAntiAlias(true);
         middlePaint.setAlpha(180);  // Full opacity
 
         // Define reduced radius values for the circles
@@ -1041,6 +1048,7 @@ public class CheckersBoardView extends View {
         borderPaint.setStyle(Paint.Style.STROKE);
         borderPaint.setStrokeWidth(8f); // Thicker border width
         borderPaint.setAlpha(255); // Full opacity for the border
+        borderPaint.setAntiAlias(true);
 
         // Small offset for the border
         float borderOffset = 4f;

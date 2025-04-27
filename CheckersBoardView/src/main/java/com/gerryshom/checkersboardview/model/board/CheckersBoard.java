@@ -1,7 +1,7 @@
 package com.gerryshom.checkersboardview.model.board;
 
 
-import com.gerryshom.checkersboardview.model.player.User;
+import com.gerryshom.checkersboardview.model.player.Player;
 
 import java.util.List;
 
@@ -12,22 +12,24 @@ public class CheckersBoard {
     private String opponentId;
     private long createdAt;
     private String activePlayerId;
-    private User creator;
-    private User opponent;
+    private Player creator;
+    private Player opponent;
 
-    public User getCreator() {
+    public CheckersBoard() {}
+
+    public Player getCreator() {
         return creator;
     }
 
-    public void setCreator(User creator) {
+    public void setCreator(Player creator) {
         this.creator = creator;
     }
 
-    public User getOpponent() {
+    public Player getOpponent() {
         return opponent;
     }
 
-    public void setOpponent(User opponent) {
+    public void setOpponent(Player opponent) {
         this.opponent = opponent;
     }
 

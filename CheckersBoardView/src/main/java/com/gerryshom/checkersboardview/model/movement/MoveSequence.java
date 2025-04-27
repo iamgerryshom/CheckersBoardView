@@ -11,6 +11,9 @@ public class MoveSequence {
         this.moves = moves;
     }
 
+    public MoveSequence() {
+    }
+
     public String getDestination() {
         return destination;
     }

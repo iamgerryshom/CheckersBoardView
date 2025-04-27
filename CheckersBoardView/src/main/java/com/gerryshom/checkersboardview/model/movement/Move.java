@@ -19,6 +19,8 @@ public class Move implements Serializable {
     private transient float fromCenterY;
     private transient float toCenterY;
 
+    public Move() {}
+
     public int getFromRow() {
         return fromRow;
     }

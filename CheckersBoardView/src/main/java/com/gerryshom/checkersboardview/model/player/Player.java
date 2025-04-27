@@ -1,8 +1,11 @@
 package com.gerryshom.checkersboardview.model.player;
 
-public class User {
+public class Player {
     private String id;
     private String name;
+
+    public Player() {
+    }
 
     public String getId() {
         return id;
