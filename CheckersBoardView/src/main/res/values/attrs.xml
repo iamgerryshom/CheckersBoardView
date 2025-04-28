@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CheckersBoardView">
+        <attr name="darkTileColor" format="color"/>
+        <attr name="lightTileColor" format="color"/>
+    </declare-styleable>
+</resources>

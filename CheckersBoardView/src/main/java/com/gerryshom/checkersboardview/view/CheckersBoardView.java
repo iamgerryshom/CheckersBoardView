@@ -2,10 +2,13 @@ package com.gerryshom.checkersboardview.view;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -14,7 +17,9 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
+import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.defaults.DefaultPaint;
 import com.gerryshom.checkersboardview.defaults.DefaultRule;
 import com.gerryshom.checkersboardview.enums.Direction;
@@ -58,23 +63,23 @@ public class CheckersBoardView extends View {
 
     public CheckersBoardView(Context context) {
         super(context);
-        init();
+        init(null);
     }
 
     public CheckersBoardView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(attrs);
 
     }
 
     public CheckersBoardView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(attrs);
     }
 
     public CheckersBoardView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        init();
+        init(attrs);
     }
 
     public interface BoardListener {
@@ -121,15 +126,44 @@ public class CheckersBoardView extends View {
         this.gameFlowRule = gameFlowRule;
     }
 
-    private void init() {
+    public void setDarkTileColor(final int color) {
+        darkTilePaint.setColor(color);
+        invalidate();
+    }
+
+    public void setLightTileColor(final int color) {
+        lightTilePaint.setColor(color);
+        invalidate();
+    }
+
+    private void init(final AttributeSet attrs) {
         //tile paints
         darkTilePaint = DefaultPaint.darkTilePaint();
         lightTilePaint = DefaultPaint.lightTilePaint();
+
+        handleAttrs(attrs);
 
         listeners.add(new BoardListener() {}); // helps to avoid null pointer exception
 
         setDefaultRules();
 
+    }
+
+    /**
+     * sets the attributes defined in xml
+     */
+    private void handleAttrs(final AttributeSet attrs) {
+        if (attrs == null) return;
+        final TypedArray a = getContext().getTheme().obtainStyledAttributes(
+                attrs,
+                R.styleable.CheckersBoardView,
+                0, 0);
+        try {
+            darkTilePaint.setColor(a.getColor(R.styleable.CheckersBoardView_darkTileColor, Color.rgb(82, 41, 0)));
+            lightTilePaint.setColor(a.getColor(R.styleable.CheckersBoardView_lightTileColor, Color.rgb(192, 144, 105)));
+        } finally {
+            a.recycle();
+        }
 
     }
 
@@ -228,6 +262,7 @@ public class CheckersBoardView extends View {
      * ensures only active player can select a piece and only pieces that belong to the current player can be selected
      */
     private void onActionDown(final float touchX, final float touchY) {
+
 
         //checks if the current user is not the active player
         if(!activePlayerId.equals(myPlayerId)) return;
@@ -1072,26 +1107,31 @@ public class CheckersBoardView extends View {
         canvas.drawCircle(piece.getCenterX(), piece.getCenterY(), cellSize * 0.4f, paint);
     }
 
-/*
-    private void d(Canvas canvas, Piece piece, Paint paint, int cellSize) {
-        // Load the vector drawable (checker piece)
-        Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.approve_vector);
-        int pieceColor = Color.parseColor(piece.getColor());  // This would be the color of the piece (e.g., "red", "black", etc.)
-        drawable.setTint(pieceColor);
-        // Set the size for the drawable (scale to fit the cell size)
-        int size = (int) (cellSize * 0.8); // Adjust size as needed
+
+    private void dnp(Canvas canvas, Piece piece, Paint paint, int cellSize) {
+        // Get the vector drawable once and cache it if possible
+        Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.regular_piece_vector);
+        if (drawable == null) return;
+
+
+        // Calculate bounds once
+        int size = (int) (cellSize * 0.8f);
+        int halfSize = size / 2;
+        int centerX = (int) piece.getCenterX();
+        int centerY = (int) piece.getCenterY();
+
+        // Set bounds
         drawable.setBounds(
-                (int) (piece.getCenterX() - size / 2),
-                (int) (piece.getCenterY() - size / 2),
-                (int) (piece.getCenterX() + size / 2),
-                (int) (piece.getCenterY() + size / 2)
+                centerX - halfSize,
+                centerY - halfSize,
+                centerX + halfSize,
+                centerY + halfSize
         );
 
-        // Draw the drawable onto the canvas
+        // Draw
         drawable.draw(canvas);
     }
 
- */
 
     /**
      * resolves touch co-ordinates into radius field and returns any piece that falls withing that field
