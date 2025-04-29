@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.gerryshom.checkersboardview.BoardState;
 import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.defaults.DefaultPaint;
 import com.gerryshom.checkersboardview.defaults.DefaultRule;
@@ -38,6 +39,7 @@ import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 
@@ -180,8 +182,6 @@ public class CheckersBoardView extends View {
      */
     public void setMyPlayerId(final String myPlayerId) {
         this.myPlayerId = myPlayerId;
-        checkersBoard = resetBoard(myPlayerId,myPlayerId, "2");
-        pieces = checkersBoard.getPieces();
     }
 
     /**
@@ -198,11 +198,6 @@ public class CheckersBoardView extends View {
             remotePlayerId = checkersBoard.getCreatorId();
             setRotation(180); // rotates the board so that the player at the top can play as if they are at the bottom. This makes it easier to play instead of rotating the whole device/
         }
-
-/*
-        remotePlayerId = myPlayerId.equals(checkersBoard.getCreatorId()) ?
-                checkersBoard.getOpponentId() : checkersBoard.getCreatorId();
- */
 
         activePlayerId = checkersBoard.getActivePlayerId();
 
@@ -326,7 +321,7 @@ public class CheckersBoardView extends View {
         if(piece.isKing()) {
 
             final Piece capturedPiece = findPossibleCapture(
-                    findPieceById(move.getPieceId()).getPlayerId(), move.getFromCenterX(), move.getFromCenterY(), move.getToCenterX(), move.getToCenterY()
+                    findPieceById(move.getPieceId(), pieces).getPlayerId(), move.getFromCenterX(), move.getFromCenterY(), move.getToCenterX(), move.getToCenterY()
             );
 
             if(capturedPiece != null) {
@@ -339,7 +334,7 @@ public class CheckersBoardView extends View {
             if (Math.abs(designatedRowAndCol.y - currentRowAndCol.y) > 1) {
 
                 final Piece capturedPiece = findPossibleCapture(
-                        findPieceById(move.getPieceId()).getPlayerId(), move.getFromCenterX(), move.getFromCenterY(), move.getToCenterX(), move.getToCenterY()
+                        findPieceById(move.getPieceId(), pieces).getPlayerId(), move.getFromCenterX(), move.getFromCenterY(), move.getToCenterX(), move.getToCenterY()
                 );
 
                 if(capturedPiece != null) {
@@ -362,7 +357,7 @@ public class CheckersBoardView extends View {
 
         if (move.getCapturedPieceId() != null && !possibleCaptures.isEmpty()) {
             // Was a capture move and more captures possible → continue chain
-            addHighlights(findPieceById(move.getPieceId()), move.getToCenterX(), move.getToCenterY());
+            addHighlights(findPieceById(move.getPieceId(), pieces), move.getToCenterX(), move.getToCenterY());
 
         } else {
             // Either no capture or no further captures → end move
@@ -431,6 +426,185 @@ public class CheckersBoardView extends View {
 
         invalidate();
     }
+
+    public void triggerMiniMaxAlgorithm() {
+        final int depth = 5;
+        String aiPlayerId = "ai";
+
+        CheckersBoard clonedBoard = this.checkersBoard.deepClone();
+
+        BoardState bestMoveState = minimax(clonedBoard, depth, true, aiPlayerId);
+
+        if (bestMoveState != null && bestMoveState.getMoveSequence() != null) {
+            playOpponentMoveSequence(bestMoveState.getMoveSequence());
+        }
+    }
+
+    public BoardState minimax(CheckersBoard board, int depth, boolean isMaximizing, String aiPlayerId) {
+        if (depth == 0 || isGameOver(board)) {
+            int score = evaluateBoard(board, aiPlayerId);
+            return new BoardState(board, null, score);
+        }
+
+        List<MoveSequence> sequences = findAllValidMoveSequences(
+                findMoveablePiecesByPlayerId(isMaximizing ? aiPlayerId : myPlayerId, board.getPieces())
+        );
+
+        BoardState bestState = null;
+
+        for (MoveSequence sequence : sequences) {
+            CheckersBoard cloned = board.deepClone();
+            CheckersBoard updated = applyMoveSequence(cloned, sequence);
+
+            BoardState result = minimax(updated, depth - 1, !isMaximizing, aiPlayerId);
+            result.setMoveSequence(sequence); // track which move led to this state
+
+            if (bestState == null ||
+                    (isMaximizing && result.getScore() > bestState.getScore()) ||
+                    (!isMaximizing && result.getScore() < bestState.getScore())) {
+                bestState = result;
+            }
+        }
+
+        return bestState;
+    }
+
+    public int evaluateBoard(CheckersBoard board, String aiPlayerId) {
+        int score = 0;
+        String opponentId = identifyOpponentPlayerId(aiPlayerId);
+
+        List<Piece> aiPieces = findPiecesByPlayerId(aiPlayerId, board.getPieces());
+        List<Piece> opponentPieces = findPiecesByPlayerId(opponentId, board.getPieces());
+
+        // Count pieces with weights
+        for (Piece piece : aiPieces) {
+            score += piece.isKing() ? 5 : 3;
+
+            // Position-based evaluation (prefer pieces closer to king row)
+            int row = piece.getRow();
+            if (!piece.isKing()) {
+                // Assuming lower rows are opponent's side (king row)
+                score += (7 - row);  // Encourage advancement towards king row
+            }
+
+            // Bonus for center control
+            int col = piece.getCol();
+            if (col >= 2 && col <= 5) {
+                score += 1;
+            }
+        }
+
+        for (Piece piece : opponentPieces) {
+            score -= piece.isKing() ? 5 : 3;
+
+            // Position-based evaluation
+            int row = piece.getRow();
+            if (!piece.isKing()) {
+                // Assuming higher rows are AI's side (king row)
+                score -= row;  // Discourage opponent advancement
+            }
+
+            // Penalty for opponent center control
+            int col = piece.getCol();
+            if (col >= 2 && col <= 5) {
+                score -= 1;
+            }
+        }
+
+        // Check available moves (mobility)
+        List<MoveSequence> aiMoves = findAllValidMoveSequences(findMoveablePiecesByPlayerId(aiPlayerId, board.getPieces()));
+        List<MoveSequence> opponentMoves = findAllValidMoveSequences(findMoveablePiecesByPlayerId(opponentId, board.getPieces()));
+
+        score += aiMoves.size();
+        score -= opponentMoves.size();
+
+        return score;
+    }
+
+    private List<Piece> findPiecesByPlayerId(final String playerId, final List<Piece> pieces) {
+        final List<Piece> playerPieces = new ArrayList<>();
+        for(Piece piece : pieces) {
+            if(playerId.equals(piece.getPlayerId())) playerPieces.add(piece);
+        }
+        return playerPieces;
+    }
+
+    private CheckersBoard applyMoveSequence(final CheckersBoard checkersBoard, final MoveSequence moveSequence) {
+        final CheckersBoard clonedCheckersBoard = checkersBoard.deepClone();
+        final List<Piece> clonedPieces = clonedCheckersBoard.getPieces();
+
+        for(Move move : moveSequence.getMoves()) {
+
+            final Piece clonedPiece = findPieceById(move.getPieceId(), clonedPieces);
+
+            if (move.getCapturedPieceId() != null) {
+                final Piece captured = findPieceById(move.getCapturedPieceId(), clonedPieces);
+                if (captured != null) {
+                    clonedPieces.remove(captured);
+                }
+            }
+
+            clonedPiece.setRow(move.getToRow());
+            clonedPiece.setCol(move.getToCol());
+            clonedPiece.setCenterX(move.getToCenterX());
+            clonedPiece.setCenterY(move.getToCenterY());
+
+        }
+
+        return clonedCheckersBoard;
+    }
+
+    private List<MoveSequence> findAllValidMoveSequences(final List<Piece> moveablePieces) {
+        final List<MoveSequence> moveSequences = new ArrayList<>();
+
+        for(Piece piece : moveablePieces) {
+
+            final List<Highlight> aiLandingHighlights = commonLandingHighlights(
+                    piece, piece.getCenterX(), piece.getCenterY()
+            );
+
+            final List<Move> moves = new ArrayList<>();
+
+            for(Highlight highlight : aiLandingHighlights) {
+
+                int toCenterX = highlight.getPoint().x;
+                int toCenterY = highlight.getPoint().y;
+                final Point toRowCol = calculateRowAndCol(toCenterX, toCenterY);
+
+                int toRow = toRowCol.x;
+                int toCol = toRowCol.y;
+
+                final Move move = new Move();
+                move.setId(UUID.randomUUID().toString());
+
+                move.setPieceId(piece.getId());
+                move.setFromCol(piece.getCol());
+                move.setFromRow(piece.getRow());
+                move.setToRow(toRow);
+                move.setToCol(toCol);
+                move.setFromCenterX(piece.getCenterX());
+                move.setFromCenterY(piece.getCenterY());
+                move.setToCenterX(toCenterX);
+                move.setToCenterY(toCenterY);
+
+                moves.add(move);
+
+            }
+
+            moveSequences.add(new MoveSequence(identifyOpponentPlayerId(piece.getPlayerId()), moves));
+
+        }
+
+        return moveSequences;
+
+    }
+
+    public boolean isGameOver(CheckersBoard board) {
+        List<Piece> aiPieces = findMoveablePiecesByPlayerId(board.getCreatorId(), board.getPieces());
+        List<Piece> opponentPieces = findMoveablePiecesByPlayerId(board.getOpponentId(), board.getPieces());
+        return aiPieces.isEmpty() || opponentPieces.isEmpty();
+    }
+
 
     /**
      * Calculates and returns a list of possible landing cells for the given piece.
@@ -598,7 +772,7 @@ public class CheckersBoardView extends View {
             piece.setKing(crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow()));
 
         if(move.getCapturedPieceId() != null) {
-            final Piece capturedPiece = findPieceById(move.getCapturedPieceId());
+            final Piece capturedPiece = findPieceById(move.getCapturedPieceId(), pieces);
             pieces.remove(capturedPiece);
 
             final int remainingPieces = getPieceCountByPlayerId(capturedPiece.getPlayerId());
@@ -611,9 +785,12 @@ public class CheckersBoardView extends View {
         animatePieceMovement(piece, move.getToCenterX(), move.getToCenterY(), ()->{
 
             final String opponentPlayerId = identifyOpponentPlayerId(piece.getPlayerId());
-            switchPlayers(opponentPlayerId);
 
-            if(findMoveablePiecesByPlayerId(opponentPlayerId).isEmpty())
+            if(isFinalMove) {
+                switchPlayers(opponentPlayerId);
+            }
+
+            if(findMoveablePiecesByPlayerId(opponentPlayerId, pieces).isEmpty())
                 for(BoardListener listener : listeners)
                     listener.onWin(piece.getPlayerId());
 
@@ -643,7 +820,7 @@ public class CheckersBoardView extends View {
             move.setToCenterX(centerXAndY.x);
             move.setToCenterY(centerXAndY.y);
 
-            final Piece piece = findPieceById(move.getPieceId());
+            final Piece piece = findPieceById(move.getPieceId(), pieces);
 
             playMove(piece, move, i == moveSequence.getMoves().size() - 1);
 
@@ -652,7 +829,7 @@ public class CheckersBoardView extends View {
     }
 
 
-    private Piece findPieceById(final String id) {
+    private Piece findPieceById(final String id, final List<Piece> pieces) {
         for(Piece p : pieces) {
             if(p.getId().equals(id)) return p;
         }
@@ -720,7 +897,7 @@ public class CheckersBoardView extends View {
      * @param playerId id of the player
      * @return a list of the moveable pieces
      */
-    private List<Piece> findMoveablePiecesByPlayerId(final String playerId) {
+    private List<Piece> findMoveablePiecesByPlayerId(final String playerId, final List<Piece> pieces) {
         final List<Piece> moveablePieces = new ArrayList<>();
         for(Piece p : pieces) {
             if(!p.getPlayerId().equals(playerId)) continue;
@@ -1161,23 +1338,25 @@ public class CheckersBoardView extends View {
      * prepares the board for a local match
      * @param activePlayerId the player who will start the game
      * @param myPlayerId the player who created the board
-     * @param remotePlayerId the player who joined the board
      */
-    public CheckersBoard resetBoard(@NonNull final String activePlayerId,
+    public CheckersBoard createCheckersBoard(@NonNull final String activePlayerId,
                            @NonNull final String myPlayerId,
-                           @NonNull final String remotePlayerId) {
+                           @NonNull final String opponentPlayerId) {
 
         final CheckersBoard checkersBoard = new CheckersBoard();
-        checkersBoard.setPieces(new ArrayList<>());
-
-        this.activePlayerId = activePlayerId;
-        this.myPlayerId = myPlayerId;
-        this.remotePlayerId = remotePlayerId;
 
         checkersBoard.setCreatorId(myPlayerId);
-        checkersBoard.setActivePlayerId(myPlayerId);
-        checkersBoard.setOpponentId(remotePlayerId);
+        checkersBoard.setActivePlayerId(activePlayerId);
+        checkersBoard.setOpponentId(opponentPlayerId);
 
+        checkersBoard.setPieces(createPieces(myPlayerId, opponentPlayerId));
+
+        return checkersBoard;
+
+    }
+
+    private List<Piece> createPieces(final String myPlayerId, final String opponentPlayerId) {
+        final List<Piece> pieces = new ArrayList<>();
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
 
@@ -1190,19 +1369,17 @@ public class CheckersBoardView extends View {
                 piece.setKing(false);
 
                 if(row <= 2) {
-                    piece.setPlayerId(remotePlayerId);
+                    piece.setPlayerId(opponentPlayerId);
                     piece.setColor("#FFFF99");
                 } else if(row >= 5) {
                     piece.setPlayerId(myPlayerId);
                     piece.setColor("#FFFFFFFF");
                 }
 
-                checkersBoard.getPieces().add(piece);
+                pieces.add(piece);
             }
         }
-
-        return checkersBoard;
-
+        return pieces;
     }
 
 

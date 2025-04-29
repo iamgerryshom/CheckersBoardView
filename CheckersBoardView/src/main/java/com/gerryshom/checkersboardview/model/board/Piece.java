@@ -15,6 +15,36 @@ public class Piece {
     private String color;
     private boolean inCaptureChain;
 
+    public Piece(String id, int row, int col, String playerId, Player player, boolean king, float centerX, float centerY, boolean highlighted, String color, boolean inCaptureChain) {
+        this.id = id;
+        this.row = row;
+        this.col = col;
+        this.playerId = playerId;
+        this.player = player;
+        this.king = king;
+        this.centerX = centerX;
+        this.centerY = centerY;
+        this.highlighted = highlighted;
+        this.color = color;
+        this.inCaptureChain = inCaptureChain;
+    }
+
+    public Piece clone() {
+        return new Piece(
+                id,
+                row,
+                col,
+                playerId,
+                player,
+                king,
+                centerX,
+                centerY,
+                highlighted,
+                color,
+                inCaptureChain
+        );
+    }
+
     public Piece() {}
 
     public boolean isInCaptureChain() {

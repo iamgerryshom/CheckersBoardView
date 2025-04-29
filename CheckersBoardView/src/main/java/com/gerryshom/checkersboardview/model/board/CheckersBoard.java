@@ -3,6 +3,7 @@ package com.gerryshom.checkersboardview.model.board;
 
 import com.gerryshom.checkersboardview.model.player.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CheckersBoard {
@@ -14,6 +15,38 @@ public class CheckersBoard {
     private String activePlayerId;
     private Player creator;
     private Player opponent;
+
+    public CheckersBoard(String id, List<Piece> pieces, String creatorId, String opponentId, long createdAt, String activePlayerId, Player creator, Player opponent) {
+        this.id = id;
+        this.pieces = pieces;
+        this.creatorId = creatorId;
+        this.opponentId = opponentId;
+        this.createdAt = createdAt;
+        this.activePlayerId = activePlayerId;
+        this.creator = creator;
+        this.opponent = opponent;
+    }
+
+    public CheckersBoard deepClone() {
+        return new CheckersBoard(
+                id,
+                clonePieces(pieces),
+                creatorId,
+                opponentId,
+                createdAt,
+                activePlayerId,
+                creator,
+                opponent
+        );
+    }
+
+    public List<Piece> clonePieces(final List<Piece> pieces) {
+        final List<Piece> clonedPieces = new ArrayList<>();
+        for(Piece piece : pieces) {
+            clonedPieces.add(piece.clone());
+        }
+        return clonedPieces;
+    }
 
     public CheckersBoard() {}
 
