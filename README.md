@@ -19,10 +19,10 @@ You can easily integrate it into your app, customize the appearance with XML att
 ## 📦 Installation
 
 <details>
-<summary><b>Gradle (Coming Soon)</b></summary>
+<summary><b>Gradle</b></summary>
 
 ```gradle
-implementation 'com.gerryshom:checkersboardview:1.0.0'
+implementation 'com.github.iamgerryshom:CheckersBoardView:1.4.0'
 ```
 </details>
 
