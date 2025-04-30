@@ -351,7 +351,7 @@ public class CheckersBoardView extends View {
         moves.add(move);
 
         // Always find possible captures at the new spot
-        final List<Piece> possibleCaptures = findPossibleCaptures(touchedPiece.getPlayerId(), move.getToCenterX(), move.getToCenterY());
+        final List<Piece> possibleCaptures = findPossibleCaptures(touchedPiece.getPlayerId(), move.getToRow(), move.getToCol());
 
         touchedPiece.setInCaptureChain(!possibleCaptures.isEmpty() && capturing);
 
@@ -991,27 +991,20 @@ public class CheckersBoardView extends View {
     /**
      * returns all the pieces a player can possibly capture in all directions
      * @param playerId the id of the player attempting to make a move
-     * @param currentCenterX the current x co-ordinate for the selected piece
-     * @param currentCenterY the current y co-ordinate for the selected piece
      * @return a list of the pieces
      */
-    private List<Piece> findPossibleCaptures(final String playerId, final float currentCenterX, final float currentCenterY) {
+    private List<Piece> findPossibleCaptures(final String playerId, final int currentRow, final int currentCol) {
 
         final List<Piece> possibleCaptures = new ArrayList<>();
-
-        final Point currentRowAndCol = calculateRowAndCol(currentCenterX, currentCenterY);
-
-        final int currentRow = currentRowAndCol.x;
-        final int currentCol = currentRowAndCol.y;
 
         final int[] rowDirections = {-2, -2, 2, 2};
         final int[] colDirections = {-2, 2, -2, 2};
 
         for(int i = 0; i < 4; i++) {
-            final int row = currentRow + rowDirections[i];
-            final int col = currentCol + colDirections[i];
+            final int nextRow = currentRow + rowDirections[i];
+            final int nextCol = currentCol + colDirections[i];
 
-            final Piece pieceAtDestination = findPieceByRowAndCol(row, col);
+            final Piece pieceAtDestination = findPieceByRowAndCol(nextRow, nextCol);
 
             final int middleRow = currentRow + rowDirections[i] / 2; // Middle piece's row
             final int middleCol = currentCol + colDirections[i] / 2; // Middle piece's column
@@ -1021,7 +1014,7 @@ public class CheckersBoardView extends View {
             if(middlePiece == null) continue;
             if(middlePiece.getPlayerId().equals(playerId)) continue;
             if(pieceAtDestination != null) continue;
-            if(!isValidRowCol(row, col)) continue;
+            if(!isValidRowCol(nextRow, nextCol)) continue;
 
             possibleCaptures.add(middlePiece);
 
