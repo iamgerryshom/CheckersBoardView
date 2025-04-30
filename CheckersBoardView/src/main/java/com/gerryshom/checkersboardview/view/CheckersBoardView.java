@@ -285,7 +285,6 @@ public class CheckersBoardView extends View {
 
         final Move move = buildMove(touchedPiece, newRowAndCol, newCenterXAndY);
 
-
         if (validateMove(move)) {
             processMove(move, touchedPiece);
         }
@@ -318,16 +317,13 @@ public class CheckersBoardView extends View {
     private boolean capturing;
     private void processMove(final Move move, final Piece piece) {
 
-        piece.setRow(move.getToRow());
-        piece.setCol(move.getToCol());
-
         final Point designatedRowAndCol = calculateRowAndCol(move.getToCenterX(), move.getToCenterY());
         final Point currentRowAndCol = calculateRowAndCol(move.getFromCenterX(), move.getFromCenterY());
 
         if(piece.isKing()) {
 
             final Piece capturedPiece = findPossibleCapture(
-                    findPieceById(move.getPieceId(), pieces).getPlayerId(), move.getFromCenterX(), move.getFromCenterY(), move.getToCenterX(), move.getToCenterY()
+                    findPieceById(move.getPieceId(), pieces).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
             );
 
             if(capturedPiece != null) {
@@ -340,7 +336,7 @@ public class CheckersBoardView extends View {
             if (Math.abs(designatedRowAndCol.y - currentRowAndCol.y) > 1) {
 
                 final Piece capturedPiece = findPossibleCapture(
-                        findPieceById(move.getPieceId(), pieces).getPlayerId(), move.getFromCenterX(), move.getFromCenterY(), move.getToCenterX(), move.getToCenterY()
+                        findPieceById(move.getPieceId(), pieces).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
                 );
 
                 if(capturedPiece != null) {
@@ -919,30 +915,17 @@ public class CheckersBoardView extends View {
 
     /**
      * attempts to find an enemy piece that was jumped.
-     * @param initialCenterX initial x co-ordinate of the piece that made the jump
-     * @param initialCenterY initial y co-ordinate of the piece that made the jump
-     * @param finalX final x co-ordinate of the piece that made the jump
-     * @param finalY initial final co-ordinate of the piece that made the jump
      * @return enemy piece object that was jumped or null if no enemy piece was jumped
      */
-    private Piece findPossibleCapture(final String playerId, final float initialCenterX, final float initialCenterY, final float finalX, final float finalY) {
-        // Calculate the current row and column of the selected piece
-        final Point currentRowAndCol = calculateRowAndCol(initialCenterX, initialCenterY);
-        int startRow = currentRowAndCol.x;
-        int startCol = currentRowAndCol.y;
-
-        // Calculate the row and column of the designated (final) destination
-        final Point designatedRowAndCol = calculateRowAndCol(finalX, finalY);
-        int endRow = designatedRowAndCol.x;
-        int endCol = designatedRowAndCol.y;
+    private Piece findPossibleCapture(final String playerId, final int fromRow, final int fromCol, final int toRow, final int toCol) {
 
         // Determine direction of movement
-        int rowDirection = Integer.compare(endRow - startRow, 0);
-        int colDirection = Integer.compare(endCol - startCol, 0);
+        int rowDirection = Integer.compare(toRow - fromRow, 0);
+        int colDirection = Integer.compare(toCol - fromCol, 0);
 
         // For a valid capture, start and end must be at least 2 steps apart
-        int rowDiff = Math.abs(endRow - startRow);
-        int colDiff = Math.abs(endCol - startCol);
+        int rowDiff = Math.abs(toRow - fromRow);
+        int colDiff = Math.abs(toCol - fromCol);
 
         if (rowDiff != colDiff || rowDiff < 2) {
             return null; // Not a diagonal move or not far enough for a capture
@@ -950,8 +933,8 @@ public class CheckersBoardView extends View {
 
         // For regular pieces, check only the middle position
         if (rowDiff == 2) {
-            int middleRow = startRow + rowDirection;
-            int middleCol = startCol + colDirection;
+            int middleRow = fromRow + rowDirection;
+            int middleCol = fromCol + colDirection;
 
             Piece middlePiece = findPieceByRowAndCol(middleRow, middleCol);
             if (middlePiece != null && !middlePiece.getPlayerId().equals(playerId)) {
@@ -961,13 +944,13 @@ public class CheckersBoardView extends View {
         // For king pieces, check all positions between start and end
         else {
             // Start from the position after the starting point
-            int currentRow = startRow + rowDirection;
-            int currentCol = startCol + colDirection;
+            int currentRow = fromRow + rowDirection;
+            int currentCol = fromCol + colDirection;
 
             Piece enemyPiece = null;
 
             // Check all positions between start and end (exclusive of end)
-            while (currentRow != endRow && currentCol != endCol) {
+            while (currentRow != toRow && currentCol != toCol) {
                 Piece pieceAtPosition = findPieceByRowAndCol(currentRow, currentCol);
 
                 if (pieceAtPosition != null) {
