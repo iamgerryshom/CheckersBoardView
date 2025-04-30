@@ -285,7 +285,10 @@ public class CheckersBoardView extends View {
 
         final Move move = buildMove(touchedPiece, newRowAndCol, newCenterXAndY);
 
-        if (validateMove(move)) processMove(move, touchedPiece);
+
+        if (validateMove(move)) {
+            processMove(move, touchedPiece);
+        }
 
     }
 
@@ -304,7 +307,7 @@ public class CheckersBoardView extends View {
         touchedPiece = piece;
         piece.setHighlighted(true);
 
-        addHighlights(piece, piece.getCenterX(), piece.getCenterY());
+        addHighlights(piece, piece.getRow(), piece.getCol());
 
     }
 
@@ -314,6 +317,9 @@ public class CheckersBoardView extends View {
      */
     private boolean capturing;
     private void processMove(final Move move, final Piece piece) {
+
+        piece.setRow(move.getToRow());
+        piece.setCol(move.getToCol());
 
         final Point designatedRowAndCol = calculateRowAndCol(move.getToCenterX(), move.getToCenterY());
         final Point currentRowAndCol = calculateRowAndCol(move.getFromCenterX(), move.getFromCenterY());
@@ -357,7 +363,7 @@ public class CheckersBoardView extends View {
 
         if (move.getCapturedPieceId() != null && !possibleCaptures.isEmpty()) {
             // Was a capture move and more captures possible → continue chain
-            addHighlights(findPieceById(move.getPieceId(), pieces), move.getToCenterX(), move.getToCenterY());
+            addHighlights(findPieceById(move.getPieceId(), pieces), move.getToRow(), move.getToCol());
 
         } else {
             // Either no capture or no further captures → end move
@@ -403,8 +409,8 @@ public class CheckersBoardView extends View {
     /**
      * a common method for find landing highlights
      */
-    private List<Highlight> commonLandingHighlights(final Piece p, final float currentCenterX, final float currentCenterY) {
-        return createLandingHighlights(p, currentCenterX, currentCenterY,
+    private List<Highlight> commonLandingHighlights(final Piece p, final int row, final int col) {
+        return createLandingHighlights(p, row, col,
                 p.isKing() || !normalPieceRule.isRestrictToForwardMovement()
                         ? Arrays.asList(Direction.TOP_LEFT, Direction.TOP_RIGHT, Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT)
                         : p.getPlayerId().equals(checkersBoard.getCreatorId())
@@ -419,10 +425,10 @@ public class CheckersBoardView extends View {
      * clears the previous landing highlights and then
      * adds the new highlights to a highlights list
      */
-    private void addHighlights(final Piece piece, final float currentCenterX, final float currentCenterY) {
+    private void addHighlights(final Piece piece, final int row, final int col) {
 
         highlights.clear();
-        highlights.addAll(commonLandingHighlights(piece, currentCenterX, currentCenterY));
+        highlights.addAll(commonLandingHighlights(piece, row, col));
 
         invalidate();
     }
@@ -560,7 +566,7 @@ public class CheckersBoardView extends View {
         for(Piece piece : moveablePieces) {
 
             final List<Highlight> aiLandingHighlights = commonLandingHighlights(
-                    piece, piece.getCenterX(), piece.getCenterY()
+                    piece, piece.getRow(), piece.getCol()
             );
 
             final List<Move> moves = new ArrayList<>();
@@ -605,13 +611,10 @@ public class CheckersBoardView extends View {
         return aiPieces.isEmpty() || opponentPieces.isEmpty();
     }
 
-
     /**
      * Calculates and returns a list of possible landing cells for the given piece.
      *
      * @param piece                              The selected piece
-     * @param currentCenterX                     X coordinate of the selected piece
-     * @param currentCenterY                     Y coordinate of the selected piece
      * @param allowedDirections                  Directions the piece is allowed to move
      * @param allowHighlightsInForbiddenDirections Whether to allow captures in forbidden directions
      * @param maxKingMoveSteps                       Maximum number of steps a king can take in a regular move (0 = no limit)
@@ -619,19 +622,18 @@ public class CheckersBoardView extends View {
      * @return List of Highlight positions where the piece can land
      */
     private List<Highlight> createLandingHighlights(final Piece piece,
-                                                    final float currentCenterX,
-                                                    final float currentCenterY,
+                                                    final int row,
+                                                    final int col,
                                                     final List<Direction> allowedDirections,
                                                     final boolean allowHighlightsInForbiddenDirections,
                                                     final int maxKingMoveSteps,
                                                     final int maxKingJumpLandingDistance) {
 
         final List<Highlight> landingHighlights = new ArrayList<>();
-        final Point currentRowAndCol = calculateRowAndCol(currentCenterX, currentCenterY);
 
         for (Direction dir : Direction.values()) {
-            int currentRow = currentRowAndCol.x;
-            int currentCol = currentRowAndCol.y;
+            int currentRow = row;
+            int currentCol = col;
 
             final Point rowColDir = dir.toPoint();
             int enemiesFound = 0;
@@ -768,6 +770,9 @@ public class CheckersBoardView extends View {
 
         if(piece == null || move == null) return;
 
+        piece.setRow(move.getToRow());
+        piece.setCol(move.getToCol());
+
         if(!piece.isKing() && isFinalMove)
             piece.setKing(crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow()));
 
@@ -852,6 +857,8 @@ public class CheckersBoardView extends View {
         move.setFromCenterX(touchedPiece.getCenterX());
         move.setFromCenterY(touchedPiece.getCenterY());
         move.setPieceId(touchedPiece.getId());
+        move.setFromCol(touchedPiece.getCol());
+        move.setFromRow(touchedPiece.getRow());
         move.setToRow(newRowAndCol.x);
         move.setToCol(newRowAndCol.y);
 
@@ -902,7 +909,7 @@ public class CheckersBoardView extends View {
         for(Piece p : pieces) {
             if(!p.getPlayerId().equals(playerId)) continue;
 
-            if(!commonLandingHighlights(p, p.getCenterX(), p.getCenterY()).isEmpty())
+            if(!commonLandingHighlights(p, p.getRow(), p.getCol()).isEmpty())
                 moveablePieces.add(p);
 
         }
