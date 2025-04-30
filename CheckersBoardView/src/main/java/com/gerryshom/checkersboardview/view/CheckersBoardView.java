@@ -876,23 +876,6 @@ public class CheckersBoardView extends View {
 
         return false;
 
-        /*
-
-        // Check if the destination is a light cell
-        if (isLightCell(designatedRowAndCol.x, designatedRowAndCol.y)) return false;
-
-        // Check if the piece is moving to the same row or column
-        if (currentRowAndCol.x == designatedRowAndCol.x || currentRowAndCol.y == designatedRowAndCol.y) return false;
-
-        // The move must be diagonal
-        if (Math.abs(designatedRowAndCol.x - currentRowAndCol.x) != Math.abs(designatedRowAndCol.y - currentRowAndCol.y)) return false;
-
-
-        //if (designatedRowAndCol.x > currentRowAndCol.x) return false;
-
-        return true;
-
-         */
     }
 
     /**
