@@ -976,7 +976,7 @@ public class CheckersBoardView extends View {
      * @param playerId the id of the player attempting to make a move
      * @return a list of the pieces
      */
-    private List<Piece> findPossibleCaptures(final String playerId, final int currentRow, final int currentCol) {
+    private List<Piece> findPossibleCaptures(final String playerId, final int row, final int col) {
 
         final List<Piece> possibleCaptures = new ArrayList<>();
 
@@ -984,13 +984,13 @@ public class CheckersBoardView extends View {
         final int[] colDirections = {-2, 2, -2, 2};
 
         for(int i = 0; i < 4; i++) {
-            final int nextRow = currentRow + rowDirections[i];
-            final int nextCol = currentCol + colDirections[i];
+            final int nextRow = row + rowDirections[i];
+            final int nextCol = col + colDirections[i];
 
             final Piece pieceAtDestination = findPieceByRowAndCol(nextRow, nextCol);
 
-            final int middleRow = currentRow + rowDirections[i] / 2; // Middle piece's row
-            final int middleCol = currentCol + colDirections[i] / 2; // Middle piece's column
+            final int middleRow = row + rowDirections[i] / 2; // Middle piece's row
+            final int middleCol = col + colDirections[i] / 2; // Middle piece's column
 
             final Piece middlePiece = findPieceByRowAndCol(middleRow, middleCol);
 
