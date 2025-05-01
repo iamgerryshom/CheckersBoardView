@@ -335,15 +335,11 @@ public class CheckersBoardView extends View {
 
         for(BoardListener listener : listeners) {
             listener.onPieceCompletedMoveSequence(new MoveSequence(remotePlayerId, moves));
-            new Handler().postDelayed(()->{
-                MiniMax.findBestMoveSequence(checkersBoard, new MiniMax.Listener() {
-                    @Override
-                    public void onBestMoveSequenceFound(MoveSequence moveSequence) {
-                        playOpponentMoveSequence(moveSequence);
-                    }
-                });
-            }, 1000);
         }
+
+        MiniMax.searchBestMoveSequence(checkersBoard, 5, (moveSequence)->{
+            playOpponentMoveSequence(moveSequence);
+        });
 
         moves.clear();
 
@@ -353,8 +349,6 @@ public class CheckersBoardView extends View {
         switchPlayers(remotePlayerId);
 
     }
-
-
 
     /**
      * clears the previous landing highlights and then

@@ -25,19 +25,16 @@ public class MiniMax {
         void onBestMoveSequenceFound(final MoveSequence moveSequence);
     }
 
-    public static void findBestMoveSequence(final CheckersBoard checkersBoard, final Listener listener) {
+    public static void searchBestMoveSequence(final CheckersBoard checkersBoard, final int searchDepth, final Listener listener) {
 
-        Executor executor = Executors.newSingleThreadExecutor();
+        Executors.newSingleThreadExecutor().execute(()->{
+            final BoardState completeBoardStateTree = createBoardStateTree(checkersBoard, searchDepth);
 
-        executor.execute(()->{
-            final BoardState completeBoardStateTree = createBoardStateTree(checkersBoard, 5);
-
-            final BoardState bestBoardState = findBestMove(completeBoardStateTree);
+            final BoardState bestBoardState = findBestBordState(completeBoardStateTree);
 
             new Handler(Looper.getMainLooper()).post(()->{
                 listener.onBestMoveSequenceFound(bestBoardState.getMoveSequence());
             });
-
 
         });
 
@@ -68,22 +65,21 @@ public class MiniMax {
     }
 
     // This function will help you to find the best move at the root node
-    private static BoardState findBestMove(BoardState root) {
+    private static BoardState findBestBordState(BoardState root) {
         int bestEval = Integer.MIN_VALUE;
-        BoardState bestMove = null;
+        BoardState bestBoardState = null;
 
         // Iterate through each child of the root and evaluate using Minimax
         for (BoardState child : root.getChildren()) {
             int eval = minimax(child, 5, true);  // Assume AI is maximizing player
             if (eval > bestEval) {
                 bestEval = eval;
-                bestMove = child;
+                bestBoardState = child;
             }
         }
 
-        return bestMove;
+        return bestBoardState;
     }
-
 
     private static int evaluateBoard(CheckersBoard board, String playerId) {
         int score = 0;
@@ -176,8 +172,9 @@ public class MiniMax {
                 final Move move = buildMove(moveablePiece.getId(), moveablePiece.getRow(), landingSpot.getRowCol().x, moveablePiece.getCol(), landingSpot.getRowCol().y);
 
                 if (landingSpot.isAfterJump()) {
-                    Piece jumped = clonedCheckersBoard.findPossibleCapture(playerId, move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
-                    if (jumped != null) move.setCapturedPieceId(jumped.getId());
+                    final Piece jumpedPiece = clonedCheckersBoard.findPossibleCapture(playerId, move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
+                    if (jumpedPiece != null) move.setCapturedPieceId(jumpedPiece.getId());
+
                 }
 
                 possibleMoves.add(move);
