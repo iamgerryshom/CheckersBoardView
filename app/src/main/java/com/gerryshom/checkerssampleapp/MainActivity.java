@@ -3,6 +3,7 @@ package com.gerryshom.checkerssampleapp;
 import android.graphics.Color;
 import android.os.Bundle;
 
+import com.gerryshom.checkersboardview.ai.algorithm.MiniMax;
 import com.gerryshom.checkersboardview.model.board.CheckersBoard;
 import com.gerryshom.checkersboardview.model.movement.MoveSequence;
 import com.gerryshom.checkersboardview.view.CheckersBoardView;

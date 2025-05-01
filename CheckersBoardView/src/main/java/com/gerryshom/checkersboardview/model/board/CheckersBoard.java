@@ -13,6 +13,7 @@ import com.gerryshom.checkersboardview.model.rules.CaptureRule;
 import com.gerryshom.checkersboardview.model.rules.GameFlowRule;
 import com.gerryshom.checkersboardview.model.rules.KingPieceRule;
 import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +35,7 @@ public class CheckersBoard {
     private CaptureRule captureRule;
     private GameFlowRule gameFlowRule;
 
-    public CheckersBoard(String id, List<Piece> pieces, String creatorId, String opponentId, long createdAt, String activePlayerId, Player creator, Player opponent) {
+    public CheckersBoard(String id, List<Piece> pieces, String creatorId, String opponentId, long createdAt, String activePlayerId, Player creator, Player opponent, int boardWidth, NormalPieceRule normalPieceRule, KingPieceRule kingPieceRule, CaptureRule captureRule, GameFlowRule gameFlowRule) {
         this.id = id;
         this.pieces = pieces;
         this.creatorId = creatorId;
@@ -43,19 +44,64 @@ public class CheckersBoard {
         this.activePlayerId = activePlayerId;
         this.creator = creator;
         this.opponent = opponent;
+        this.boardWidth = boardWidth;
+        this.normalPieceRule = normalPieceRule;
+        this.kingPieceRule = kingPieceRule;
+        this.captureRule = captureRule;
+        this.gameFlowRule = gameFlowRule;
     }
 
     public CheckersBoard deepClone() {
         return new CheckersBoard(
-                id,
-                clonePieces(pieces),
-                creatorId,
-                opponentId,
-                createdAt,
-                activePlayerId,
-                creator,
-                opponent
+                id, clonePieces(pieces), creatorId, opponentId, createdAt, activePlayerId, creator, opponent, boardWidth, normalPieceRule, kingPieceRule,
+                captureRule, gameFlowRule
         );
+    }
+
+    /*
+    public CheckersBoard deepClone() {
+        final Gson gson = new Gson();
+        String json = gson.toJson(this);
+        return gson.fromJson(json, CheckersBoard.class);
+    }
+
+     */
+
+    /**
+     * returns the number of pieces for a player
+     * @param playerId - id of the player to count remaining pieces
+     * @return an int of the remaining pieces count
+     */
+    public int getPieceCountByPlayerId(final String playerId) {
+        int pieceCount = 0;
+
+        for(Piece p : pieces)
+            if(p.getPlayerId().equals(playerId)) pieceCount++;
+
+        return pieceCount;
+    }
+
+
+    /**
+     * returns id of the opponent player
+     * @param playerId id of the current player
+     * @return id of the enemy player
+     */
+    public String identifyOpponentPlayerId(final String playerId) {
+        if(playerId == null ) throw new RuntimeException("playerId is null");
+        return playerId.equals(creatorId)
+                ? opponentId
+                : creatorId;
+    }
+
+    public List<Piece> findPiecesByPlayerId(final String playerId) {
+        final List<Piece> playerPieces = new ArrayList<>();
+        for(Piece piece : pieces) {
+            if(piece.getPlayerId().equals(playerId)) {
+                playerPieces.add(piece);
+            }
+        }
+        return playerPieces;
     }
 
     public List<Piece> clonePieces(final List<Piece> pieces) {

@@ -11,7 +11,6 @@ import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -20,13 +19,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
-import com.gerryshom.checkersboardview.model.board.BoardState;
 import com.gerryshom.checkersboardview.R;
+import com.gerryshom.checkersboardview.ai.algorithm.MiniMax;
 import com.gerryshom.checkersboardview.defaults.DefaultPaint;
 import com.gerryshom.checkersboardview.defaults.DefaultRule;
-import com.gerryshom.checkersboardview.enums.Direction;
 import com.gerryshom.checkersboardview.helper.BoardHelper;
-import com.gerryshom.checkersboardview.helper.PieceHelper;
 import com.gerryshom.checkersboardview.model.board.CheckersBoard;
 import com.gerryshom.checkersboardview.model.board.Piece;
 import com.gerryshom.checkersboardview.model.guides.LandingSpot;
@@ -36,15 +33,10 @@ import com.gerryshom.checkersboardview.model.rules.CaptureRule;
 import com.gerryshom.checkersboardview.model.rules.GameFlowRule;
 import com.gerryshom.checkersboardview.model.rules.KingPieceRule;
 import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 public class CheckersBoardView extends View {
@@ -88,20 +80,6 @@ public class CheckersBoardView extends View {
         default void onActivePlayerSwitched(final String newActivePlayerId){}
         default void onPieceCaptured(final String capturedPiecePlayerId, final int remainingPieceCount){}
         default void onWin(final String winnerPlayerId){}
-    }
-
-    /**
-     * returns the number of pieces for a player
-     * @param playerId - id of the player to count remaining pieces
-     * @return an int of the remaining pieces count
-     */
-    public int getPieceCountByPlayerId(final String playerId) {
-        int pieceCount = 0;
-
-        for(Piece p : checkersBoard.getPieces())
-            if(p.getPlayerId().equals(playerId)) pieceCount++;
-
-        return pieceCount;
     }
 
     /**
@@ -165,7 +143,6 @@ public class CheckersBoardView extends View {
         }
 
     }
-
 
     /**
      * sets the id of the player created the board
@@ -356,8 +333,17 @@ public class CheckersBoardView extends View {
         touchedPiece.setHighlighted(false);
         capturing = false;
 
-        for(BoardListener listener : listeners)
+        for(BoardListener listener : listeners) {
             listener.onPieceCompletedMoveSequence(new MoveSequence(remotePlayerId, moves));
+            new Handler().postDelayed(()->{
+                MiniMax.findBestMoveSequence(checkersBoard, new MiniMax.Listener() {
+                    @Override
+                    public void onBestMoveSequenceFound(MoveSequence moveSequence) {
+                        playOpponentMoveSequence(moveSequence);
+                    }
+                });
+            }, 1000);
+        }
 
         moves.clear();
 
@@ -425,7 +411,7 @@ public class CheckersBoardView extends View {
             final Piece capturedPiece = checkersBoard.findPieceById(move.getCapturedPieceId());
             checkersBoard.getPieces().remove(capturedPiece);
 
-            final int remainingPieces = getPieceCountByPlayerId(capturedPiece.getPlayerId());
+            final int remainingPieces = checkersBoard.getPieceCountByPlayerId(capturedPiece.getPlayerId());
 
             for(BoardListener listener : listeners)
                 listener.onPieceCaptured(capturedPiece.getPlayerId(), remainingPieces);

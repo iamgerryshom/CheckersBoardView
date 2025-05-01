@@ -1,5 +1,6 @@
-package com.gerryshom.checkersboardview.model.board;
+package com.gerryshom.checkersboardview.ai.model;
 
+import com.gerryshom.checkersboardview.model.board.CheckersBoard;
 import com.gerryshom.checkersboardview.model.movement.MoveSequence;
 
 import java.util.List;
@@ -7,16 +8,16 @@ import java.util.List;
 public class BoardState {
     private CheckersBoard boardSnapshot;
     private MoveSequence moveSequence;
-    private int heuristic;
+    private int score;
     private List<BoardState> children;
 
     public BoardState() {
     }
 
-    public BoardState(CheckersBoard boardSnapshot, MoveSequence moveSequence, int heuristic) {
+    public BoardState(CheckersBoard boardSnapshot, MoveSequence moveSequence, int score) {
         this.boardSnapshot = boardSnapshot;
         this.moveSequence = moveSequence;
-        this.heuristic = heuristic;
+        this.score = score;
     }
 
     public CheckersBoard getBoardSnapshot() {
@@ -43,11 +44,11 @@ public class BoardState {
         this.moveSequence = moveSequence;
     }
 
-    public int getHeuristic() {
-        return heuristic;
+    public int getScore() {
+        return score;
     }
 
-    public void setHeuristic(int heuristic) {
-        this.heuristic = heuristic;
+    public void setScore(int score) {
+        this.score = score;
     }
 }

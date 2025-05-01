@@ -19,6 +19,10 @@ public class Move implements Serializable {
     private transient float fromCenterY;
     private transient float toCenterY;
 
+    public boolean isCapture() {
+        return capturedPieceId != null;
+    }
+
     public Move clone() {
         return new Move(id,
                 pieceId,
