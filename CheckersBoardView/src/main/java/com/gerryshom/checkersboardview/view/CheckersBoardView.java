@@ -7,10 +7,11 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
-import android.graphics.PorterDuff;
+import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -19,7 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
-import com.gerryshom.checkersboardview.BoardState;
+import com.gerryshom.checkersboardview.model.board.BoardState;
 import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.defaults.DefaultPaint;
 import com.gerryshom.checkersboardview.defaults.DefaultRule;
@@ -28,27 +29,29 @@ import com.gerryshom.checkersboardview.helper.BoardHelper;
 import com.gerryshom.checkersboardview.helper.PieceHelper;
 import com.gerryshom.checkersboardview.model.board.CheckersBoard;
 import com.gerryshom.checkersboardview.model.board.Piece;
-import com.gerryshom.checkersboardview.model.guides.Highlight;
+import com.gerryshom.checkersboardview.model.guides.LandingSpot;
 import com.gerryshom.checkersboardview.model.movement.Move;
 import com.gerryshom.checkersboardview.model.movement.MoveSequence;
 import com.gerryshom.checkersboardview.model.rules.CaptureRule;
 import com.gerryshom.checkersboardview.model.rules.GameFlowRule;
 import com.gerryshom.checkersboardview.model.rules.KingPieceRule;
 import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class CheckersBoardView extends View {
 
-    private List<Piece> pieces = new ArrayList<>();
     private final List<Move> moves = new ArrayList<>();
     private List<BoardListener> listeners = new ArrayList<>();
-    private List<Highlight> highlights = new ArrayList<>();
+    private List<LandingSpot> landingSpots = new ArrayList<>();
 
     private String myPlayerId;
     private String remotePlayerId;
@@ -57,10 +60,6 @@ public class CheckersBoardView extends View {
     private Paint darkTilePaint;
     private Paint lightTilePaint;
 
-    private CaptureRule captureRule;
-    private GameFlowRule gameFlowRule;
-    private KingPieceRule kingPieceRule;
-    private NormalPieceRule normalPieceRule;
     private CheckersBoard checkersBoard;
 
     public CheckersBoardView(Context context) {
@@ -99,7 +98,7 @@ public class CheckersBoardView extends View {
     public int getPieceCountByPlayerId(final String playerId) {
         int pieceCount = 0;
 
-        for(Piece p : pieces)
+        for(Piece p : checkersBoard.getPieces())
             if(p.getPlayerId().equals(playerId)) pieceCount++;
 
         return pieceCount;
@@ -113,19 +112,19 @@ public class CheckersBoardView extends View {
     }
 
     public void setRule(final CaptureRule captureRule) {
-        this.captureRule = captureRule;
+        checkersBoard.setCaptureRule(captureRule);
     }
 
     public void setRule(final NormalPieceRule normalPieceRule) {
-        this.normalPieceRule = normalPieceRule;
+        checkersBoard.setNormalPieceRule(normalPieceRule);
     }
 
     public void setRule(final KingPieceRule kingPieceRule) {
-        this.kingPieceRule = kingPieceRule;
+        checkersBoard.setKingPieceRule(kingPieceRule);
     }
 
     public void setRule(final GameFlowRule gameFlowRule) {
-        this.gameFlowRule = gameFlowRule;
+        checkersBoard.setGameFlowRule(gameFlowRule);
     }
 
     public void setDarkTileColor(final int color) {
@@ -147,8 +146,6 @@ public class CheckersBoardView extends View {
 
         listeners.add(new BoardListener() {}); // helps to avoid null pointer exception
 
-        setDefaultRules();
-
     }
 
     /**
@@ -169,12 +166,6 @@ public class CheckersBoardView extends View {
 
     }
 
-    public void setDefaultRules() {
-        captureRule = DefaultRule.captureRule();
-        gameFlowRule = DefaultRule.gameFlowRule();
-        kingPieceRule = DefaultRule.kingPieceRule();
-        normalPieceRule = DefaultRule.normalPieceRule();
-    }
 
     /**
      * sets the id of the player created the board
@@ -188,8 +179,14 @@ public class CheckersBoardView extends View {
      * Called when a checkers board for a live match is created
      */
     public void setCheckersBoard(final CheckersBoard checkersBoard) {
+
+        checkersBoard.setKingPieceRule(DefaultRule.kingPieceRule());
+        checkersBoard.setNormalPieceRule(DefaultRule.normalPieceRule());
+        checkersBoard.setCaptureRule(DefaultRule.captureRule());
+        checkersBoard.setGameFlowRule(DefaultRule.gameFlowRule());
+        checkersBoard.setBoardWidth(getWidth());
+
         this.checkersBoard = checkersBoard;
-        pieces = checkersBoard.getPieces();
 
         if(myPlayerId.equals(checkersBoard.getCreatorId())) {
             remotePlayerId = checkersBoard.getOpponentId();
@@ -258,17 +255,16 @@ public class CheckersBoardView extends View {
      */
     private void onActionDown(final float touchX, final float touchY) {
 
-
         //checks if the current user is not the active player
-        if(!activePlayerId.equals(myPlayerId)) return;
+        //if(!activePlayerId.equals(myPlayerId)) return;
 
-        final Piece piece = findTouchedPieceByTouchXAndY(touchX, touchY);
+        final Piece piece = checkersBoard.findTouchedPieceByTouchXAndY(touchX, touchY);
 
         if (piece == null) {
             handleMove(touchX, touchY);
         } else {
             //checks if the piece does not belong to the current player
-            if(!piece.getPlayerId().equals(myPlayerId)) return;
+            //if(!piece.getPlayerId().equals(myPlayerId)) return;
             handlePieceSelection(piece);
         }
 
@@ -280,14 +276,22 @@ public class CheckersBoardView extends View {
     private void handleMove(final float touchX, final float touchY) {
         if (touchedPiece == null) return;
 
-        final Point newRowAndCol = calculateRowAndCol(touchX, touchY);
-        final Point newCenterXAndY = calculateCellCenter(newRowAndCol.x, newRowAndCol.y);
+        final Point newRowCol = calculateRowColByXAndY(touchX, touchY);
+        final PointF newCenterXY = calculateCenterXYByRowAndCol(newRowCol.x, newRowCol.y);
 
-        final Move move = buildMove(touchedPiece, newRowAndCol, newCenterXAndY);
+        final Move move = buildMove(
+                touchedPiece.getId(),
+                touchedPiece.getCenterX(),
+                newCenterXY.x,
+                touchedPiece.getCenterY(),
+                newCenterXY.y,
+                touchedPiece.getRow(),
+                newRowCol.x,
+                touchedPiece.getCol(),
+                newRowCol.y
+        );
 
-        if (validateMove(move)) {
-            processMove(move, touchedPiece);
-        }
+        if (validateMove(move)) processMove(move);
 
     }
 
@@ -300,13 +304,13 @@ public class CheckersBoardView extends View {
 
         if (touchedPiece != null) {
             touchedPiece.setHighlighted(false);
-            if(touchedPiece.isInCaptureChain() && captureRule.isForceCapture()) return;
+            if(touchedPiece.isInCaptureChain() && checkersBoard.getCaptureRule().isForceCapture()) return;
         }
 
         touchedPiece = piece;
         piece.setHighlighted(true);
 
-        addHighlights(piece, piece.getRow(), piece.getCol());
+        addLandingSpots(piece, piece.getRow(), piece.getCol());
 
     }
 
@@ -315,43 +319,21 @@ public class CheckersBoardView extends View {
      * @param move the object containing movement metadata
      */
     private boolean capturing;
-    private void processMove(final Move move, final Piece piece) {
+    private void processMove(final Move move) {
 
-        final Point designatedRowAndCol = calculateRowAndCol(move.getToCenterX(), move.getToCenterY());
-        final Point currentRowAndCol = calculateRowAndCol(move.getFromCenterX(), move.getFromCenterY());
+        final Piece capturedPiece = checkersBoard.findPossibleCapture(
+                checkersBoard.findPieceById(move.getPieceId()).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
+        );
 
-        if(piece.isKing()) {
-
-            final Piece capturedPiece = findPossibleCapture(
-                    findPieceById(move.getPieceId(), pieces).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
-            );
-
-            if(capturedPiece != null) {
-                move.setCapturedPieceId(capturedPiece.getId());
-                capturing = true;
-            }
-
-        } else {
-            // Check if the move is too far (for a standard move)
-            if (Math.abs(designatedRowAndCol.y - currentRowAndCol.y) > 1) {
-
-                final Piece capturedPiece = findPossibleCapture(
-                        findPieceById(move.getPieceId(), pieces).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
-                );
-
-                if(capturedPiece != null) {
-                    move.setCapturedPieceId(capturedPiece.getId());
-                    capturing = true;
-                }
-
-
-            }
+        if(capturedPiece != null) {
+            move.setCapturedPieceId(capturedPiece.getId());
+            capturing = true;
         }
 
         moves.add(move);
 
         // Always find possible captures at the new spot
-        final List<Piece> possibleCaptures = findPossibleCaptures(touchedPiece.getPlayerId(), move.getToRow(), move.getToCol());
+        final List<Piece> possibleCaptures = checkersBoard.findPossibleCaptures(touchedPiece.getPlayerId(), move.getToRow(), move.getToCol());
 
         touchedPiece.setInCaptureChain(!possibleCaptures.isEmpty() && capturing);
 
@@ -359,7 +341,7 @@ public class CheckersBoardView extends View {
 
         if (move.getCapturedPieceId() != null && !possibleCaptures.isEmpty()) {
             // Was a capture move and more captures possible → continue chain
-            addHighlights(findPieceById(move.getPieceId(), pieces), move.getToRow(), move.getToCol());
+            addLandingSpots(checkersBoard.findPieceById(move.getPieceId()), move.getToRow(), move.getToCol());
 
         } else {
             // Either no capture or no further captures → end move
@@ -380,357 +362,24 @@ public class CheckersBoardView extends View {
         moves.clear();
 
         touchedPiece = null;
-        highlights.clear();
+        landingSpots.clear();
 
         switchPlayers(remotePlayerId);
 
     }
 
-    /**
-     * sets the king property to true for a piece
-     * @param creatorId userId for player who created the board. This player starts from the 7 - 5 rows
-     * @param playerId userId of the player who moved a piece
-     * @param toRow the destination row that the piece was moved to
-     */
-    private boolean crownKing(final String creatorId, final String playerId, final int toRow) {
-        if (creatorId.equals(playerId)) {
-            // Creator moving upward → Crown at row 0
-            return toRow == 0;
-        } else {
-            // Opponent moving downward → Crown at row 7
-            return toRow == 7;
-        }
-    }
 
-    /**
-     * a common method for find landing highlights
-     */
-    private List<Highlight> commonLandingHighlights(final Piece p, final int row, final int col) {
-        return createLandingHighlights(p, row, col,
-                p.isKing() || !normalPieceRule.isRestrictToForwardMovement()
-                        ? Arrays.asList(Direction.TOP_LEFT, Direction.TOP_RIGHT, Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT)
-                        : p.getPlayerId().equals(checkersBoard.getCreatorId())
-                        ? Arrays.asList(Direction.TOP_LEFT, Direction.TOP_RIGHT)
-                        : Arrays.asList(Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT),
-                normalPieceRule.isAllowBackwardCapture(),
-                kingPieceRule.getMaxMoveSteps(),
-                kingPieceRule.getMaxLandingDistanceAfterCapture());
-    }
 
     /**
      * clears the previous landing highlights and then
      * adds the new highlights to a highlights list
      */
-    private void addHighlights(final Piece piece, final int row, final int col) {
+    private void addLandingSpots(final Piece piece, final int row, final int col) {
 
-        highlights.clear();
-        highlights.addAll(commonLandingHighlights(piece, row, col));
+        landingSpots.clear();
+        landingSpots.addAll(checkersBoard.commonLandingSpots(piece, row, col));
 
         invalidate();
-    }
-
-    public void triggerMiniMaxAlgorithm() {
-        final int depth = 5;
-        String aiPlayerId = "ai";
-
-        CheckersBoard clonedBoard = this.checkersBoard.deepClone();
-
-        BoardState bestMoveState = minimax(clonedBoard, depth, true, aiPlayerId);
-
-        if (bestMoveState != null && bestMoveState.getMoveSequence() != null) {
-            playOpponentMoveSequence(bestMoveState.getMoveSequence());
-        }
-    }
-
-    public BoardState minimax(CheckersBoard board, int depth, boolean isMaximizing, String aiPlayerId) {
-        if (depth == 0 || isGameOver(board)) {
-            int score = evaluateBoard(board, aiPlayerId);
-            return new BoardState(board, null, score);
-        }
-
-        List<MoveSequence> sequences = findAllValidMoveSequences(
-                findMoveablePiecesByPlayerId(isMaximizing ? aiPlayerId : myPlayerId, board.getPieces())
-        );
-
-        BoardState bestState = null;
-
-        for (MoveSequence sequence : sequences) {
-            CheckersBoard cloned = board.deepClone();
-            CheckersBoard updated = applyMoveSequence(cloned, sequence);
-
-            BoardState result = minimax(updated, depth - 1, !isMaximizing, aiPlayerId);
-            result.setMoveSequence(sequence); // track which move led to this state
-
-            if (bestState == null ||
-                    (isMaximizing && result.getScore() > bestState.getScore()) ||
-                    (!isMaximizing && result.getScore() < bestState.getScore())) {
-                bestState = result;
-            }
-        }
-
-        return bestState;
-    }
-
-    public int evaluateBoard(CheckersBoard board, String aiPlayerId) {
-        int score = 0;
-        String opponentId = identifyOpponentPlayerId(aiPlayerId);
-
-        List<Piece> aiPieces = findPiecesByPlayerId(aiPlayerId, board.getPieces());
-        List<Piece> opponentPieces = findPiecesByPlayerId(opponentId, board.getPieces());
-
-        // Count pieces with weights
-        for (Piece piece : aiPieces) {
-            score += piece.isKing() ? 5 : 3;
-
-            // Position-based evaluation (prefer pieces closer to king row)
-            int row = piece.getRow();
-            if (!piece.isKing()) {
-                // Assuming lower rows are opponent's side (king row)
-                score += (7 - row);  // Encourage advancement towards king row
-            }
-
-            // Bonus for center control
-            int col = piece.getCol();
-            if (col >= 2 && col <= 5) {
-                score += 1;
-            }
-        }
-
-        for (Piece piece : opponentPieces) {
-            score -= piece.isKing() ? 5 : 3;
-
-            // Position-based evaluation
-            int row = piece.getRow();
-            if (!piece.isKing()) {
-                // Assuming higher rows are AI's side (king row)
-                score -= row;  // Discourage opponent advancement
-            }
-
-            // Penalty for opponent center control
-            int col = piece.getCol();
-            if (col >= 2 && col <= 5) {
-                score -= 1;
-            }
-        }
-
-        // Check available moves (mobility)
-        List<MoveSequence> aiMoves = findAllValidMoveSequences(findMoveablePiecesByPlayerId(aiPlayerId, board.getPieces()));
-        List<MoveSequence> opponentMoves = findAllValidMoveSequences(findMoveablePiecesByPlayerId(opponentId, board.getPieces()));
-
-        score += aiMoves.size();
-        score -= opponentMoves.size();
-
-        return score;
-    }
-
-    private List<Piece> findPiecesByPlayerId(final String playerId, final List<Piece> pieces) {
-        final List<Piece> playerPieces = new ArrayList<>();
-        for(Piece piece : pieces) {
-            if(playerId.equals(piece.getPlayerId())) playerPieces.add(piece);
-        }
-        return playerPieces;
-    }
-
-    private CheckersBoard applyMoveSequence(final CheckersBoard checkersBoard, final MoveSequence moveSequence) {
-        final CheckersBoard clonedCheckersBoard = checkersBoard.deepClone();
-        final List<Piece> clonedPieces = clonedCheckersBoard.getPieces();
-
-        for(Move move : moveSequence.getMoves()) {
-
-            final Piece clonedPiece = findPieceById(move.getPieceId(), clonedPieces);
-
-            if (move.getCapturedPieceId() != null) {
-                final Piece captured = findPieceById(move.getCapturedPieceId(), clonedPieces);
-                if (captured != null) {
-                    clonedPieces.remove(captured);
-                }
-            }
-
-            clonedPiece.setRow(move.getToRow());
-            clonedPiece.setCol(move.getToCol());
-            clonedPiece.setCenterX(move.getToCenterX());
-            clonedPiece.setCenterY(move.getToCenterY());
-
-        }
-
-        return clonedCheckersBoard;
-    }
-
-    private List<MoveSequence> findAllValidMoveSequences(final List<Piece> moveablePieces) {
-        final List<MoveSequence> moveSequences = new ArrayList<>();
-
-        for(Piece piece : moveablePieces) {
-
-            final List<Highlight> aiLandingHighlights = commonLandingHighlights(
-                    piece, piece.getRow(), piece.getCol()
-            );
-
-            final List<Move> moves = new ArrayList<>();
-
-            for(Highlight highlight : aiLandingHighlights) {
-
-                int toCenterX = highlight.getPoint().x;
-                int toCenterY = highlight.getPoint().y;
-                final Point toRowCol = calculateRowAndCol(toCenterX, toCenterY);
-
-                int toRow = toRowCol.x;
-                int toCol = toRowCol.y;
-
-                final Move move = new Move();
-                move.setId(UUID.randomUUID().toString());
-
-                move.setPieceId(piece.getId());
-                move.setFromCol(piece.getCol());
-                move.setFromRow(piece.getRow());
-                move.setToRow(toRow);
-                move.setToCol(toCol);
-                move.setFromCenterX(piece.getCenterX());
-                move.setFromCenterY(piece.getCenterY());
-                move.setToCenterX(toCenterX);
-                move.setToCenterY(toCenterY);
-
-                moves.add(move);
-
-            }
-
-            moveSequences.add(new MoveSequence(identifyOpponentPlayerId(piece.getPlayerId()), moves));
-
-        }
-
-        return moveSequences;
-
-    }
-
-    public boolean isGameOver(CheckersBoard board) {
-        List<Piece> aiPieces = findMoveablePiecesByPlayerId(board.getCreatorId(), board.getPieces());
-        List<Piece> opponentPieces = findMoveablePiecesByPlayerId(board.getOpponentId(), board.getPieces());
-        return aiPieces.isEmpty() || opponentPieces.isEmpty();
-    }
-
-    /**
-     * Calculates and returns a list of possible landing cells for the given piece.
-     *
-     * @param piece                              The selected piece
-     * @param allowedDirections                  Directions the piece is allowed to move
-     * @param allowHighlightsInForbiddenDirections Whether to allow captures in forbidden directions
-     * @param maxKingMoveSteps                       Maximum number of steps a king can take in a regular move (0 = no limit)
-     * @param maxKingJumpLandingDistance             Maximum distance a king can land after a capture (0 = no limit)
-     * @return List of Highlight positions where the piece can land
-     */
-    private List<Highlight> createLandingHighlights(final Piece piece,
-                                                    final int row,
-                                                    final int col,
-                                                    final List<Direction> allowedDirections,
-                                                    final boolean allowHighlightsInForbiddenDirections,
-                                                    final int maxKingMoveSteps,
-                                                    final int maxKingJumpLandingDistance) {
-
-        final List<Highlight> landingHighlights = new ArrayList<>();
-
-        for (Direction dir : Direction.values()) {
-            int currentRow = row;
-            int currentCol = col;
-
-            final Point rowColDir = dir.toPoint();
-            int enemiesFound = 0;
-            int moveSteps = 0;
-            int jumpLandingSteps = 0;
-            boolean justJumped = false;
-
-            while (true) {
-                int nextRow = currentRow + rowColDir.x;
-                int nextCol = currentCol + rowColDir.y;
-
-                if (nextRow < 0 || nextRow >= 8 || nextCol < 0 || nextCol >= 8) break;
-
-                Piece pieceAtNext = findPieceByRowAndCol(nextRow, nextCol);
-
-                if (pieceAtNext == null) {
-                    if (!justJumped) {
-                        moveSteps++;
-                        if (allowedDirections.contains(dir) && (maxKingMoveSteps == 0 || moveSteps <= maxKingMoveSteps)) {
-                            landingHighlights.add(new Highlight(calculateCellCenter(nextRow, nextCol)));
-                        }
-                        if (!piece.isKing() || (maxKingMoveSteps != 0 && moveSteps >= maxKingMoveSteps)) break;
-                    } else {
-                        // We've already moved to the capture landing position (step 1)
-                        // Now we're considering additional steps after the capture
-                        jumpLandingSteps++;
-
-                        // Only add highlights if we're within the allowed landing distance
-                        if ((allowedDirections.contains(dir) || allowHighlightsInForbiddenDirections)
-                                && (maxKingJumpLandingDistance == 0 || jumpLandingSteps <= maxKingJumpLandingDistance)) {
-                            landingHighlights.add(new Highlight(calculateCellCenter(nextRow, nextCol)));
-                        }
-
-                        // Break if we've reached the max landing distance
-                        if (maxKingJumpLandingDistance != 0 && jumpLandingSteps >= maxKingJumpLandingDistance) break;
-                    }
-                    currentRow = nextRow;
-                    currentCol = nextCol;
-
-                } else if (!pieceAtNext.getPlayerId().equals(piece.getPlayerId())) {
-                    enemiesFound++;
-                    if (piece.isKing() && enemiesFound >= 2) break;
-
-                    int jumpRow = nextRow + rowColDir.x;
-                    int jumpCol = nextCol + rowColDir.y;
-
-                    if (jumpRow < 0 || jumpRow >= 8 || jumpCol < 0 || jumpCol >= 8) break;
-
-                    Piece pieceAtJump = findPieceByRowAndCol(jumpRow, jumpCol);
-
-                    if (pieceAtJump == null) {
-                        if (allowedDirections.contains(dir) || allowHighlightsInForbiddenDirections) {
-                            // For regular pieces, just add the landing highlight and stop
-                            if (!piece.isKing()) {
-                                landingHighlights.add(new Highlight(calculateCellCenter(jumpRow, jumpCol)));
-                                break;
-                            }
-
-                            // For kings with maxJumpLandingDistance = 0, add the landing spot and continue
-                            if (maxKingJumpLandingDistance == 0) {
-                                landingHighlights.add(new Highlight(calculateCellCenter(jumpRow, jumpCol)));
-                                justJumped = true;
-                                jumpLandingSteps = 0;
-                                currentRow = jumpRow;
-                                currentCol = jumpCol;
-                            }
-                            // For kings with specific maxJumpLandingDistance
-                            else {
-                                // The immediate landing spot after capture is always allowed
-                                if (maxKingJumpLandingDistance >= 1) {
-                                    landingHighlights.add(new Highlight(calculateCellCenter(jumpRow, jumpCol)));
-                                }
-
-                                // If maxJumpLandingDistance is exactly 1, break here
-                                if (maxKingJumpLandingDistance == 1) {
-                                    break;
-                                }
-                                // Otherwise continue processing, but we've already used 1 step
-                                else {
-                                    justJumped = true;
-                                    jumpLandingSteps = 1; // We've already used 1 step by landing right after capture
-                                    currentRow = jumpRow;
-                                    currentCol = jumpCol;
-                                }
-                            }
-                        } else {
-                            break;
-                        }
-                    } else {
-                        break;
-                    }
-
-                } else {
-                    break;
-                }
-
-                if (!piece.isKing()) break;
-            }
-        }
-
-        return landingHighlights;
     }
 
     /**
@@ -770,11 +419,11 @@ public class CheckersBoardView extends View {
         piece.setCol(move.getToCol());
 
         if(!piece.isKing() && isFinalMove)
-            piece.setKing(crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow()));
+            piece.setKing(checkersBoard.crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow()));
 
         if(move.getCapturedPieceId() != null) {
-            final Piece capturedPiece = findPieceById(move.getCapturedPieceId(), pieces);
-            pieces.remove(capturedPiece);
+            final Piece capturedPiece = checkersBoard.findPieceById(move.getCapturedPieceId());
+            checkersBoard.getPieces().remove(capturedPiece);
 
             final int remainingPieces = getPieceCountByPlayerId(capturedPiece.getPlayerId());
 
@@ -791,7 +440,7 @@ public class CheckersBoardView extends View {
                 switchPlayers(opponentPlayerId);
             }
 
-            if(findMoveablePiecesByPlayerId(opponentPlayerId, pieces).isEmpty())
+            if(checkersBoard.findMoveablePiecesByPlayerId(opponentPlayerId).isEmpty())
                 for(BoardListener listener : listeners)
                     listener.onWin(piece.getPlayerId());
 
@@ -817,11 +466,11 @@ public class CheckersBoardView extends View {
             final int toRow = move.getToRow();
             final int toCol = move.getToCol();
 
-            final Point centerXAndY = calculateCellCenter(toRow, toCol);
-            move.setToCenterX(centerXAndY.x);
-            move.setToCenterY(centerXAndY.y);
+            final PointF centerXY = calculateCenterXYByRowAndCol(toRow, toCol);
+            move.setToCenterX(centerXY.x);
+            move.setToCenterY(centerXY.y);
 
-            final Piece piece = findPieceById(move.getPieceId(), pieces);
+            final Piece piece = checkersBoard.findPieceById(move.getPieceId());
 
             playMove(piece, move, i == moveSequence.getMoves().size() - 1);
 
@@ -830,33 +479,30 @@ public class CheckersBoardView extends View {
     }
 
 
-    private Piece findPieceById(final String id, final List<Piece> pieces) {
-        for(Piece p : pieces) {
-            if(p.getId().equals(id)) return p;
-        }
-        return null;
-    }
 
-    /**
-     * checks that a row or col is within the grid of the board
-     */
-    private boolean isValidRowCol(int row, int col) {
-        return row >= 0 && row < 8 && col >= 0 && col < 8; // 8x8 grid for standard checkers
-    }
-
-    private Move buildMove(final Piece touchedPiece, final Point newRowAndCol, final Point newCenterXAndY) {
+    private Move buildMove(
+            final String pieceId,
+            final float fromCenterX,
+            final float toCenterX,
+            final float fromCenterY,
+            final float toCenterY,
+            final int fromRow,
+            final int toRow,
+            final int fromCol,
+            final int toCol
+    ) {
 
         final Move move = new Move();
         move.setId(UUID.randomUUID().toString());
-        move.setToCenterX(newCenterXAndY.x);
-        move.setToCenterY(newCenterXAndY.y);
-        move.setFromCenterX(touchedPiece.getCenterX());
-        move.setFromCenterY(touchedPiece.getCenterY());
-        move.setPieceId(touchedPiece.getId());
-        move.setFromCol(touchedPiece.getCol());
-        move.setFromRow(touchedPiece.getRow());
-        move.setToRow(newRowAndCol.x);
-        move.setToCol(newRowAndCol.y);
+        move.setFromCenterX(fromCenterX);
+        move.setToCenterX(toCenterX);
+        move.setFromCenterY(fromCenterY);
+        move.setToCenterY(toCenterY);
+        move.setPieceId(pieceId);
+        move.setFromCol(fromCol);
+        move.setToCol(toCol);
+        move.setFromRow(fromRow);
+        move.setToRow(toRow);
 
         return move;
     }
@@ -866,154 +512,17 @@ public class CheckersBoardView extends View {
      */
     private boolean validateMove(final Move move) {
 
-        final Point designatedRowAndCol = calculateRowAndCol(move.getToCenterX(), move.getToCenterY());
+        final Point destinationRowCol = calculateRowColByXAndY(move.getToCenterX(), move.getToCenterY());
 
-        for(Highlight highlight : highlights) {
-            final Point highlightRowAndCol = calculateRowAndCol(highlight.getPoint().x, highlight.getPoint().y);
-            //if(!piece.isKing() && designatedRowAndCol.x > currentRowAndCol.x) return false;
-            if(designatedRowAndCol.x == highlightRowAndCol.x && designatedRowAndCol.y == highlightRowAndCol.y) return true;
+        for(LandingSpot landingSpot : landingSpots) {
+            final Point landingRowCol = landingSpot.getRowCol();
+            if(destinationRowCol.x == landingRowCol.x && destinationRowCol.y == landingRowCol.y) return true;
         }
 
         return false;
 
     }
 
-    /**
-     * checks all the player's pieces to see if they have any legal moves left
-     * @param playerId id of the player
-     * @return a list of the moveable pieces
-     */
-    private List<Piece> findMoveablePiecesByPlayerId(final String playerId, final List<Piece> pieces) {
-        final List<Piece> moveablePieces = new ArrayList<>();
-        for(Piece p : pieces) {
-            if(!p.getPlayerId().equals(playerId)) continue;
-
-            if(!commonLandingHighlights(p, p.getRow(), p.getCol()).isEmpty())
-                moveablePieces.add(p);
-
-        }
-
-        return moveablePieces;
-    }
-
-    /**
-     * attempts to find an enemy piece that was jumped.
-     * @return enemy piece object that was jumped or null if no enemy piece was jumped
-     */
-    private Piece findPossibleCapture(final String playerId, final int fromRow, final int fromCol, final int toRow, final int toCol) {
-
-        // Determine direction of movement
-        int rowDirection = Integer.compare(toRow - fromRow, 0);
-        int colDirection = Integer.compare(toCol - fromCol, 0);
-
-        // For a valid capture, start and end must be at least 2 steps apart
-        int rowDiff = Math.abs(toRow - fromRow);
-        int colDiff = Math.abs(toCol - fromCol);
-
-        if (rowDiff != colDiff || rowDiff < 2) {
-            return null; // Not a diagonal move or not far enough for a capture
-        }
-
-        // For regular pieces, check only the middle position
-        if (rowDiff == 2) {
-            int middleRow = fromRow + rowDirection;
-            int middleCol = fromCol + colDirection;
-
-            Piece middlePiece = findPieceByRowAndCol(middleRow, middleCol);
-            if (middlePiece != null && !middlePiece.getPlayerId().equals(playerId)) {
-                return middlePiece;
-            }
-        }
-        // For king pieces, check all positions between start and end
-        else {
-            // Start from the position after the starting point
-            int currentRow = fromRow + rowDirection;
-            int currentCol = fromCol + colDirection;
-
-            Piece enemyPiece = null;
-
-            // Check all positions between start and end (exclusive of end)
-            while (currentRow != toRow && currentCol != toCol) {
-                Piece pieceAtPosition = findPieceByRowAndCol(currentRow, currentCol);
-
-                if (pieceAtPosition != null) {
-                    // If we already found an enemy piece and now found another piece,
-                    // this move is invalid (can't jump over two pieces)
-                    if (enemyPiece != null) {
-                        return null;
-                    }
-
-                    // If this is an enemy piece, mark it as the potential capture
-                    if (!pieceAtPosition.getPlayerId().equals(playerId)) {
-                        enemyPiece = pieceAtPosition;
-                    }
-                    // If this is a friendly piece, the move is invalid
-                    else {
-                        return null;
-                    }
-                }
-
-                // Move to the next position
-                currentRow += rowDirection;
-                currentCol += colDirection;
-            }
-
-            return enemyPiece;
-        }
-
-        return null;
-    }
-
-    /**
-     * Helper method to check if a position is valid (within bounds)
-      */
-    private boolean isValidPosition(int row, int col) {
-        return row >= 0 && row < 8 && col >= 0 && col < 8;
-    }
-
-    /**
-     * returns all the pieces a player can possibly capture in all directions
-     * @param playerId the id of the player attempting to make a move
-     * @return a list of the pieces
-     */
-    private List<Piece> findPossibleCaptures(final String playerId, final int row, final int col) {
-
-        final List<Piece> possibleCaptures = new ArrayList<>();
-
-        final int[] rowDirections = {-2, -2, 2, 2};
-        final int[] colDirections = {-2, 2, -2, 2};
-
-        for(int i = 0; i < 4; i++) {
-            final int nextRow = row + rowDirections[i];
-            final int nextCol = col + colDirections[i];
-
-            final Piece pieceAtDestination = findPieceByRowAndCol(nextRow, nextCol);
-
-            final int middleRow = row + rowDirections[i] / 2; // Middle piece's row
-            final int middleCol = col + colDirections[i] / 2; // Middle piece's column
-
-            final Piece middlePiece = findPieceByRowAndCol(middleRow, middleCol);
-
-            if(middlePiece == null) continue;
-            if(middlePiece.getPlayerId().equals(playerId)) continue;
-            if(pieceAtDestination != null) continue;
-            if(!isValidRowCol(nextRow, nextCol)) continue;
-
-            possibleCaptures.add(middlePiece);
-
-        }
-
-        return possibleCaptures;
-
-    }
-
-    /**
-     * finds a piece object in a list using the row and column
-     */
-    // Helper method to find a piece at a given position
-    private Piece findPieceByRowAndCol(int row, int col) {
-        return PieceHelper.findPieceByRowAndCol(pieces, getWidth(), row, col);
-    }
 
     /**
      * visually animates the movement of a piece from initial co-ordinates to the final co-ordinates
@@ -1026,18 +535,18 @@ public class CheckersBoardView extends View {
         final long duration = 300L;
 
         // Get the new center position
-        final Point point = calculateNewCenterXAndY(touchX, touchY);
+        final PointF pointF = calculateNewCenterXAndY(touchX, touchY);
 
         // Current position of the piece
         final float startX = piece.getCenterX();
         final float startY = piece.getCenterY();
 
         // Create two ValueAnimators, one for X and one for Y
-        final ValueAnimator animatorX = ValueAnimator.ofFloat(startX, point.x);
+        final ValueAnimator animatorX = ValueAnimator.ofFloat(startX, pointF.x);
         animatorX.setDuration(duration); // Duration of the animation (in milliseconds)
         animatorX.setInterpolator(new AccelerateDecelerateInterpolator()); // Smooth animation curve
 
-        final ValueAnimator animatorY = ValueAnimator.ofFloat(startY, point.y);
+        final ValueAnimator animatorY = ValueAnimator.ofFloat(startY, pointF.y);
         animatorY.setDuration(duration); // Duration of the animation (in milliseconds)
         animatorY.setInterpolator(new AccelerateDecelerateInterpolator()); // Smooth animation curve
 
@@ -1071,9 +580,9 @@ public class CheckersBoardView extends View {
     /**
      * resolves the touch co-ordinates into a perfect center co-ordinates
      */
-    private Point calculateNewCenterXAndY(final float touchX, final float touchY) {
-        final Point rowCol = calculateRowAndCol(touchX, touchY);
-        return calculateCellCenter(rowCol.x, rowCol.y);
+    private PointF calculateNewCenterXAndY(final float touchX, final float touchY) {
+        final Point rowCol = calculateRowColByXAndY(touchX, touchY);
+        return calculateCenterXYByRowAndCol(rowCol.x, rowCol.y);
     }
 
     /**
@@ -1081,15 +590,15 @@ public class CheckersBoardView extends View {
      * @param touchX touched x coordinate
      * @param touchY touched y coordinate
      */
-    private Point calculateRowAndCol(
+    private Point calculateRowColByXAndY(
             final float touchX,
             final float touchY) {
-        return BoardHelper.calculateRowAndCol(getWidth(), touchX, touchY);
+        return BoardHelper.calculateRowColByXAndY(getWidth(), touchX, touchY);
     }
 
-    private Point calculateCellCenter(
-            int row, int col) {
-        return BoardHelper.calculateCellCenter(getWidth(), row, col);
+    private PointF calculateCenterXYByRowAndCol(
+            final int row, final int col) {
+        return BoardHelper.calculateCellCenterByRowAndCol(getWidth(), row, col);
     }
 
     @Override
@@ -1098,13 +607,15 @@ public class CheckersBoardView extends View {
 
         drawBoard(canvas);
 
+        if(checkersBoard == null) return;
+
         drawPieces(canvas);
 
-        drawHighlights(canvas);
+        drawLandingSpots(canvas);
 
     }
 
-    private void drawHighlights(final Canvas canvas) {
+    private void drawLandingSpots(final Canvas canvas) {
         // Paint for the outermost border circle (light green)
         final Paint outerPaint = new Paint();
         outerPaint.setColor(Color.parseColor("#81C784")); // Light green
@@ -1133,17 +644,17 @@ public class CheckersBoardView extends View {
         final float innerRadius = outerRadius * 0.75f;    // Reduced inner circle radius
         final float fillRadius = innerRadius * 0.85f;      // Smaller filled circle radius (closer to the inner circle)
 
-        for (Highlight highlight : highlights) {
-            final Point point = highlight.getPoint();
+        for (LandingSpot landingSpot : landingSpots) {
+            final PointF centerXY = calculateCenterXYByRowAndCol(landingSpot.getRowCol().x, landingSpot.getRowCol().y);
 
             // Draw the outermost border circle (light green)
-            canvas.drawCircle(point.x, point.y, outerRadius, outerPaint);
+            canvas.drawCircle(centerXY.x, centerXY.y, outerRadius, outerPaint);
 
             // Draw the inner border circle (light green)
-            canvas.drawCircle(point.x, point.y, innerRadius, innerPaint);
+            canvas.drawCircle(centerXY.x, centerXY.y, innerRadius, innerPaint);
 
             // Draw the filled inner circle (red)
-            canvas.drawCircle(point.x, point.y, fillRadius, middlePaint);
+            canvas.drawCircle(centerXY.x, centerXY.y, fillRadius, middlePaint);
         }
     }
 
@@ -1154,7 +665,7 @@ public class CheckersBoardView extends View {
         for(int row = 0; row < 8; row++) {
             for(int col = 0; col < 8; col++) {
 
-                final Paint paint = isDarkCell(row, col) ? darkTilePaint : lightTilePaint;
+                final Paint paint = CheckersBoard.isDarkCell(row, col) ? darkTilePaint : lightTilePaint;
 
                 final int left = col * cellSize;
                 final int top = row * cellSize;
@@ -1169,9 +680,10 @@ public class CheckersBoardView extends View {
     }
 
     private void drawPieces(final Canvas canvas) {
+
         int cellSize = getWidth() / 8; // Assuming the board is 8x8
 
-        for (Piece piece : pieces) {
+        for (Piece piece : checkersBoard.getPieces()) {
             preparePieceCenter(piece, cellSize);
             drawPiece(canvas, piece, cellSize);
         }
@@ -1195,7 +707,7 @@ public class CheckersBoardView extends View {
 
         // Draw highlight first if the piece is highlighted
         if (piece.isHighlighted()) {
-            drawHighlight(canvas, piece, paint, cellSize);
+            drawLandingSpot(canvas, piece, paint, cellSize);
         }
 
         // Now draw the actual piece (king or normal)
@@ -1206,7 +718,7 @@ public class CheckersBoardView extends View {
         }
     }
 
-    private void drawHighlight(Canvas canvas, Piece piece, Paint paint, int cellSize) {
+    private void drawLandingSpot(Canvas canvas, Piece piece, Paint paint, int cellSize) {
         // Calculate the size and position of the highlight square based on the cell size
         float squareSize = cellSize * 0.75f; // Inner square size (75% of cell size to avoid overlap)
         float left = piece.getCenterX() - squareSize / 2;
@@ -1251,7 +763,7 @@ public class CheckersBoardView extends View {
     }
 
 
-    private void dnp(Canvas canvas, Piece piece, Paint paint, int cellSize) {
+    private void drawPieceDrawable(Canvas canvas, Piece piece, Paint paint, int cellSize) {
         // Get the vector drawable once and cache it if possible
         Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.regular_piece_vector);
         if (drawable == null) return;
@@ -1273,90 +785,6 @@ public class CheckersBoardView extends View {
 
         // Draw
         drawable.draw(canvas);
-    }
-
-
-    /**
-     * resolves touch co-ordinates into radius field and returns any piece that falls withing that field
-     */
-    private Piece findTouchedPieceByTouchXAndY(final float touchX, final float touchY) {
-        final int cellSize = getWidth() / 8;
-        final float pieceRadius = cellSize * 0.4f;  // Calculate the piece radius based on cell size
-
-        for (Piece p : pieces) {
-            // Calculate distance from the center of the piece to the touch point
-            float deltaX = touchX - p.getCenterX();
-            float deltaY = touchY - p.getCenterY();
-
-            // Calculate the Euclidean distance (distance formula)
-            float distance = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-            // If the distance is less than the piece's radius, it's a match
-            if (distance <= pieceRadius) {
-                return p;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * prepares the board for a local match
-     * @param activePlayerId the player who will start the game
-     * @param myPlayerId the player who created the board
-     */
-    public CheckersBoard createCheckersBoard(@NonNull final String activePlayerId,
-                           @NonNull final String myPlayerId,
-                           @NonNull final String opponentPlayerId) {
-
-        final CheckersBoard checkersBoard = new CheckersBoard();
-
-        checkersBoard.setCreatorId(myPlayerId);
-        checkersBoard.setActivePlayerId(activePlayerId);
-        checkersBoard.setOpponentId(opponentPlayerId);
-
-        checkersBoard.setPieces(createPieces(myPlayerId, opponentPlayerId));
-
-        return checkersBoard;
-
-    }
-
-    private List<Piece> createPieces(final String myPlayerId, final String opponentPlayerId) {
-        final List<Piece> pieces = new ArrayList<>();
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-
-                if(isLightCell(row, col) || row > 2 && row < 5) continue;
-
-                final Piece piece = new Piece();
-                piece.setId(UUID.randomUUID().toString());
-                piece.setRow(row);
-                piece.setCol(col);
-                piece.setKing(false);
-
-                if(row <= 2) {
-                    piece.setPlayerId(opponentPlayerId);
-                    piece.setColor("#FFFF99");
-                } else if(row >= 5) {
-                    piece.setPlayerId(myPlayerId);
-                    piece.setColor("#FFFFFFFF");
-                }
-
-                pieces.add(piece);
-            }
-        }
-        return pieces;
-    }
-
-
-    private boolean isDarkCell(final int row, final int col) {
-        // A dark box has an odd sum of row + col
-        return (row + col) % 2 != 0;
-    }
-
-    private boolean isLightCell(final int row, final int col) {
-        // A light box has an even sum of row + col
-        return (row + col) % 2 == 0;
     }
 
 

@@ -12,7 +12,7 @@ public class PieceHelper {
      */
     public static Piece findPieceByRowAndCol(final List<Piece> pieces, final int boardWidth, final int row, final int col) {
         for (Piece p : pieces) {
-            Point piecePosition = BoardHelper.calculateRowAndCol(boardWidth, p.getCenterX(), p.getCenterY());
+            Point piecePosition = BoardHelper.calculateRowColByXAndY(boardWidth, p.getCenterX(), p.getCenterY());
             if (piecePosition.x == row && piecePosition.y == col) {
                 return p;
             }

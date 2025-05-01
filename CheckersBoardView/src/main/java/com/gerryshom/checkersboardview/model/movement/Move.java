@@ -19,6 +19,37 @@ public class Move implements Serializable {
     private transient float fromCenterY;
     private transient float toCenterY;
 
+    public Move clone() {
+        return new Move(id,
+                pieceId,
+                capturedPieceId,
+                destination,
+                fromRow,
+                toRow,
+                fromCol,
+                toCol,
+                fromCenterX,
+                toCenterX,
+                fromCenterY,
+                toCenterY
+        );
+    }
+
+    public Move(String id, String pieceId, String capturedPieceId, String destination, int fromRow, int toRow, int fromCol, int toCol, float fromCenterX, float toCenterX, float fromCenterY, float toCenterY) {
+        this.id = id;
+        this.pieceId = pieceId;
+        this.capturedPieceId = capturedPieceId;
+        this.destination = destination;
+        this.fromRow = fromRow;
+        this.toRow = toRow;
+        this.fromCol = fromCol;
+        this.toCol = toCol;
+        this.fromCenterX = fromCenterX;
+        this.toCenterX = toCenterX;
+        this.fromCenterY = fromCenterY;
+        this.toCenterY = toCenterY;
+    }
+
     public Move() {}
 
     public int getFromRow() {

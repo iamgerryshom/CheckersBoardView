@@ -61,6 +61,8 @@ project.afterEvaluate {
 
 dependencies {
 
+    implementation ("com.squareup.retrofit2:converter-gson:2.5.0")
+
     implementation(libs.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)

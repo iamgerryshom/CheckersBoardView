@@ -1,9 +1,10 @@
 package com.gerryshom.checkersboardview.helper;
 
 import android.graphics.Point;
+import android.graphics.PointF;
 
 public class BoardHelper {
-    public static Point calculateRowAndCol(final int boardWidth, final float touchX, final float touchY) {
+    public static Point calculateRowColByXAndY(final int boardWidth, final float touchX, final float touchY) {
         // Get the width and height of the entire view
         int cellSize = boardWidth / 8; // Assuming the board is 8x8
 
@@ -19,7 +20,7 @@ public class BoardHelper {
         return new Point(row, col);
     }
 
-    public static Point calculateCellCenter(final int boardWidth, final int row, final int col) {
+    public static PointF calculateCellCenterByRowAndCol(final int boardWidth, final int row, final int col) {
         // Get the width and height of the entire view
         int cellSize = boardWidth / 8; // Assuming the board is 8x8
 
@@ -28,7 +29,7 @@ public class BoardHelper {
         float centerY = row * cellSize + cellSize / 2f;
 
         // Return the center as a Point
-        return new Point((int) centerX, (int) centerY);
+        return new PointF((int) centerX, (int) centerY);
     }
 
 }
