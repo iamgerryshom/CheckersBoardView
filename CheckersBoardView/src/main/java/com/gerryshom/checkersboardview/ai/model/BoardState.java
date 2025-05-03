@@ -20,6 +20,14 @@ public class BoardState {
         this.score = score;
     }
 
+    public BoardState deepClone() {
+        return new BoardState(
+                boardSnapshot.deepClone(),
+                moveSequence.deepClone(),
+                score
+        );
+    }
+
     public CheckersBoard getBoardSnapshot() {
         return boardSnapshot;
     }

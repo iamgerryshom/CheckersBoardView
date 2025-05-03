@@ -81,6 +81,15 @@ public class CheckersBoard {
         return pieceCount;
     }
 
+    public List<Piece> findCapturingPeaces(final String playerId) {
+        final List<Piece> capturingPeaces = new ArrayList<>();
+        for(Piece moveablePiece : findMoveablePiecesByPlayerId(playerId)) {
+            if(!findPossibleCaptures(playerId, moveablePiece.getRow(), moveablePiece.getCol()).isEmpty())
+                capturingPeaces.add(moveablePiece);
+        }
+        return capturingPeaces;
+    }
+
 
     /**
      * returns id of the opponent player

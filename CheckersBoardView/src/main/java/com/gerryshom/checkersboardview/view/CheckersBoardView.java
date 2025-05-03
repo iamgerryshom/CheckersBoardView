@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat;
 
 import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.ai.algorithm.MiniMax;
+import com.gerryshom.checkersboardview.ai.model.BoardState;
 import com.gerryshom.checkersboardview.defaults.DefaultPaint;
 import com.gerryshom.checkersboardview.defaults.DefaultRule;
 import com.gerryshom.checkersboardview.helper.BoardHelper;
@@ -37,6 +38,7 @@ import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 
 
 public class CheckersBoardView extends View {
@@ -289,6 +291,26 @@ public class CheckersBoardView extends View {
 
         addLandingSpots(piece, piece.getRow(), piece.getCol());
 
+        final BoardState bs = new BoardState();
+        bs.setBoardSnapshot(checkersBoard.deepClone());
+        bs.setChildren(new ArrayList<>());
+
+        bs.setMoveSequence(new MoveSequence("", new ArrayList<>()));
+
+        Executors.newSingleThreadExecutor().execute(()->{
+            /*
+            final BoardState boardState = MiniMax.buildCaptureChainTree(bs ,touchedPiece);
+
+            final List<BoardState> completeCaptureBoardState = MiniMax.captureBoardStates(boardState);
+
+            Log.d("d", "" + completeCaptureBoardState);
+
+            //Log.d("BoardStateDebug", "size" + boardState);
+
+             */
+        });
+
+
     }
 
     /**
@@ -337,9 +359,17 @@ public class CheckersBoardView extends View {
             listener.onPieceCompletedMoveSequence(new MoveSequence(remotePlayerId, moves));
         }
 
-        MiniMax.searchBestMoveSequence(checkersBoard, 5, (moveSequence)->{
-            playOpponentMoveSequence(moveSequence);
-        });
+        new Handler().postDelayed(()->{
+
+            MiniMax.search(checkersBoard, 5, new MiniMax.SearchListener() {
+                @Override
+                public void onComplete(MoveSequence moveSequence) {
+                    playOpponentMoveSequence(moveSequence);
+                }
+            });
+
+        }, 1000);
+
 
         moves.clear();
 

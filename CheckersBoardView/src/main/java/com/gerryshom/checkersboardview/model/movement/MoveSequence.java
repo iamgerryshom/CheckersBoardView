@@ -5,7 +5,7 @@ import java.util.List;
 
 public class MoveSequence {
     private String destination;
-    private List<Move> moves;
+    private List<Move> moves = new ArrayList<>();
 
     public MoveSequence deepClone() {
         return new MoveSequence(destination, cloneMoves(moves));
