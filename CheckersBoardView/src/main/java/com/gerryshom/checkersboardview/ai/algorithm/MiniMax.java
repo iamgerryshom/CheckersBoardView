@@ -11,6 +11,7 @@ import com.gerryshom.checkersboardview.model.board.Piece;
 import com.gerryshom.checkersboardview.model.guides.LandingSpot;
 import com.gerryshom.checkersboardview.model.movement.Move;
 import com.gerryshom.checkersboardview.model.movement.MoveSequence;
+import com.gerryshom.checkersboardview.model.player.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -175,7 +176,7 @@ public class MiniMax {
             return root.getScore();
         }
 
-        final String playerId = root.isMaximizing() ? "computer" : root.getSnapshot().identifyOpponentPlayerId("computer");
+        final String playerId = root.isMaximizing() ? Player.computer().getId() : root.getSnapshot().identifyOpponentPlayerId(Player.computer().getId());
         final String opponentPlayerId = root.getSnapshot().identifyOpponentPlayerId(playerId);
 
         List<Piece> pieces = root.getSnapshot().findCapturingPeaces(playerId);

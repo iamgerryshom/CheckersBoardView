@@ -30,6 +30,7 @@ import com.gerryshom.checkersboardview.model.board.Piece;
 import com.gerryshom.checkersboardview.model.guides.LandingSpot;
 import com.gerryshom.checkersboardview.model.movement.Move;
 import com.gerryshom.checkersboardview.model.movement.MoveSequence;
+import com.gerryshom.checkersboardview.model.player.Player;
 import com.gerryshom.checkersboardview.model.rules.CaptureRule;
 import com.gerryshom.checkersboardview.model.rules.GameFlowRule;
 import com.gerryshom.checkersboardview.model.rules.KingPieceRule;
@@ -128,7 +129,7 @@ public class CheckersBoardView extends View {
     }
 
     public void playWithComputer() {
-        setCheckersBoard(CheckersBoard.createCheckersBoard("human", "human", "computer"));
+        setCheckersBoard(CheckersBoard.createCheckersBoard(Player.human().getId(), Player.human().getId(), Player.computer().getId()));
     }
 
     /**
@@ -167,6 +168,9 @@ public class CheckersBoardView extends View {
         getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override
             public boolean onPreDraw() {
+
+                getViewTreeObserver().removeOnPreDrawListener(this);
+
                 checkersBoard.setKingPieceRule(DefaultRule.kingPieceRule());
                 checkersBoard.setNormalPieceRule(DefaultRule.normalPieceRule());
                 checkersBoard.setCaptureRule(DefaultRule.captureRule());

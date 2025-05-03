@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import com.gerryshom.checkersboardview.model.board.CheckersBoard;
 import com.gerryshom.checkersboardview.model.movement.MoveSequence;
+import com.gerryshom.checkersboardview.model.player.Player;
 import com.gerryshom.checkersboardview.view.CheckersBoardView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -32,21 +33,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onActivePlayerSwitched(String newActivePlayerId) {
                 binding.tvActivePlayer.setText(
-                        newActivePlayerId.equals("computer") ? "Computer's turn" : "Your turn"
+                        newActivePlayerId.equals(Player.computer().getId()) ? "Computer's turn" : "Your turn"
                 );
             }
 
             @Override
             public void onWin(String winnerPlayerId) {
                 binding.tvActivePlayer.setText(
-                        winnerPlayerId.equals("computer") ? "Computer Won" : "You turn"
+                        winnerPlayerId.equals(Player.computer().getId()) ? "Computer Won" : "You turn"
                 );
             }
 
 
             @Override
             public void onPieceCaptured(String capturedPiecePlayerId, int remainingPieceCount) {
-                if(capturedPiecePlayerId.equals("computer")) {
+                if(capturedPiecePlayerId.equals(Player.computer().getId())) {
                     binding.tvOpponentPieceCount.setText("Computer : " + remainingPieceCount);
                 } else {
                     binding.tvMyPlayerPieceCount.setText("You : " + remainingPieceCount);
@@ -58,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void init() {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
-        binding.checkersBoardView.setMyPlayerId("human");
+        binding.checkersBoardView.setMyPlayerId(Player.human().getId());
     }
 
     private void reset() {
