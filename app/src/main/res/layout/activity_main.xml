@@ -7,14 +7,85 @@
     android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <com.gerryshom.checkersboardview.view.CheckersBoardView
-    android:id="@+id/checkersBoardView"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-        android:layout_margin="32dp"
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_gravity="center"
-        app:darkTileColor="#212121"
-        app:lightTileColor="#494949"
-        />
+        >
+
+        <TextView
+            android:id="@+id/tvActivePlayer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:gravity="center_horizontal"
+            />
+
+        <com.gerryshom.checkersboardview.view.CheckersBoardView
+            android:id="@+id/checkersBoardView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_margin="32dp"
+            app:darkTileColor="#212121"
+            app:lightTileColor="#494949"
+            android:layout_below="@id/tvActivePlayer"
+            />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/checkersBoardView"
+            android:orientation="vertical"
+            android:gravity="center"
+            >
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/tvMyPlayerPieceCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your pieces: 12"
+                    />
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    app:dividerColor="@color/white"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    />
+
+
+                <TextView
+                    android:id="@+id/tvOpponentPieceCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Opponent's pieces: 12"
+                    />
+
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnReset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reset"
+                android:textColor="@color/white"
+                android:backgroundTint="#212121"
+                android:textAllCaps="false"
+                />
+
+        </LinearLayout>
+
+
+    </RelativeLayout>
+
 
 </FrameLayout>

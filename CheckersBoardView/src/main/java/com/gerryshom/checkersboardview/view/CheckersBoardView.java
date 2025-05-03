@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
 import androidx.annotation.NonNull;
@@ -21,7 +22,6 @@ import androidx.core.content.ContextCompat;
 
 import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.ai.algorithm.MiniMax;
-import com.gerryshom.checkersboardview.ai.model.BoardState;
 import com.gerryshom.checkersboardview.defaults.DefaultPaint;
 import com.gerryshom.checkersboardview.defaults.DefaultRule;
 import com.gerryshom.checkersboardview.helper.BoardHelper;
@@ -38,7 +38,6 @@ import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 
 
 public class CheckersBoardView extends View {
@@ -128,6 +127,10 @@ public class CheckersBoardView extends View {
 
     }
 
+    public void playWithComputer() {
+        setCheckersBoard(CheckersBoard.createCheckersBoard("human", "human", "computer"));
+    }
+
     /**
      * sets the attributes defined in xml
      */
@@ -159,25 +162,35 @@ public class CheckersBoardView extends View {
      */
     public void setCheckersBoard(final CheckersBoard checkersBoard) {
 
-        checkersBoard.setKingPieceRule(DefaultRule.kingPieceRule());
-        checkersBoard.setNormalPieceRule(DefaultRule.normalPieceRule());
-        checkersBoard.setCaptureRule(DefaultRule.captureRule());
-        checkersBoard.setGameFlowRule(DefaultRule.gameFlowRule());
-        checkersBoard.setBoardWidth(getWidth());
-
         this.checkersBoard = checkersBoard;
 
-        if(myPlayerId.equals(checkersBoard.getCreatorId())) {
-            remotePlayerId = checkersBoard.getOpponentId();
-            setRotation(0);
-        } else {
-            remotePlayerId = checkersBoard.getCreatorId();
-            setRotation(180); // rotates the board so that the player at the top can play as if they are at the bottom. This makes it easier to play instead of rotating the whole device/
-        }
+        getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                checkersBoard.setKingPieceRule(DefaultRule.kingPieceRule());
+                checkersBoard.setNormalPieceRule(DefaultRule.normalPieceRule());
+                checkersBoard.setCaptureRule(DefaultRule.captureRule());
+                checkersBoard.setGameFlowRule(DefaultRule.gameFlowRule());
+                checkersBoard.setBoardWidth(getWidth());
 
-        activePlayerId = checkersBoard.getActivePlayerId();
+                switchPlayers(checkersBoard.getActivePlayerId());
 
-        invalidate();
+                if(myPlayerId.equals(checkersBoard.getCreatorId())) {
+                    remotePlayerId = checkersBoard.getOpponentId();
+                    setRotation(0);
+                } else {
+                    remotePlayerId = checkersBoard.getCreatorId();
+                    setRotation(180); // rotates the board so that the player at the top can play as if they are at the bottom. This makes it easier to play instead of rotating the whole device/
+                }
+
+                activePlayerId = checkersBoard.getActivePlayerId();
+
+                invalidate();
+                return true;
+            }
+        });
+
+
     }
 
     @Override
@@ -235,7 +248,7 @@ public class CheckersBoardView extends View {
     private void onActionDown(final float touchX, final float touchY) {
 
         //checks if the current user is not the active player
-        //if(!activePlayerId.equals(myPlayerId)) return;
+        if(!activePlayerId.equals(myPlayerId)) return;
 
         final Piece piece = checkersBoard.findTouchedPieceByTouchXAndY(touchX, touchY);
 
@@ -243,7 +256,7 @@ public class CheckersBoardView extends View {
             handleMove(touchX, touchY);
         } else {
             //checks if the piece does not belong to the current player
-            //if(!piece.getPlayerId().equals(myPlayerId)) return;
+            if(!piece.getPlayerId().equals(myPlayerId)) return;
             handlePieceSelection(piece);
         }
 
@@ -290,26 +303,6 @@ public class CheckersBoardView extends View {
         piece.setHighlighted(true);
 
         addLandingSpots(piece, piece.getRow(), piece.getCol());
-
-        final BoardState bs = new BoardState();
-        bs.setBoardSnapshot(checkersBoard.deepClone());
-        bs.setChildren(new ArrayList<>());
-
-        bs.setMoveSequence(new MoveSequence("", new ArrayList<>()));
-
-        Executors.newSingleThreadExecutor().execute(()->{
-            /*
-            final BoardState boardState = MiniMax.buildCaptureChainTree(bs ,touchedPiece);
-
-            final List<BoardState> completeCaptureBoardState = MiniMax.captureBoardStates(boardState);
-
-            Log.d("d", "" + completeCaptureBoardState);
-
-            //Log.d("BoardStateDebug", "size" + boardState);
-
-             */
-        });
-
 
     }
 
@@ -368,8 +361,7 @@ public class CheckersBoardView extends View {
                 }
             });
 
-        }, 1000);
-
+        }, 600);
 
         moves.clear();
 

@@ -21,23 +21,54 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        init();
         setContentView(binding.getRoot());
 
-        binding.checkersBoardView.setMyPlayerId("me");
+        setClickListener();
 
-        new Handler().postDelayed(()->{
-            binding.checkersBoardView.setCheckersBoard(CheckersBoard.createCheckersBoard("me", "me", "ai"));
-
-        }, 5000);
+        reset();
 
         binding.checkersBoardView.addListener(new CheckersBoardView.BoardListener() {
             @Override
-            public void onPieceCompletedMoveSequence(MoveSequence moveSequence) {
+            public void onActivePlayerSwitched(String newActivePlayerId) {
+                binding.tvActivePlayer.setText(
+                        newActivePlayerId.equals("computer") ? "Computer's turn" : "Your turn"
+                );
+            }
 
+            @Override
+            public void onWin(String winnerPlayerId) {
+                binding.tvActivePlayer.setText(
+                        winnerPlayerId.equals("computer") ? "Computer Won" : "You turn"
+                );
+            }
+
+
+            @Override
+            public void onPieceCaptured(String capturedPiecePlayerId, int remainingPieceCount) {
+                if(capturedPiecePlayerId.equals("computer")) {
+                    binding.tvOpponentPieceCount.setText("Computer : " + remainingPieceCount);
+                } else {
+                    binding.tvMyPlayerPieceCount.setText("You : " + remainingPieceCount);
+                }
             }
         });
 
+    }
+
+    private void init() {
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        binding.checkersBoardView.setMyPlayerId("human");
+    }
+
+    private void reset() {
+        binding.checkersBoardView.playWithComputer();
+        binding.tvOpponentPieceCount.setText("Computer : 12");
+        binding.tvMyPlayerPieceCount.setText("You : 12");
+    }
+
+    private void setClickListener() {
+        binding.btnReset.setOnClickListener(v->reset());
     }
 
 }

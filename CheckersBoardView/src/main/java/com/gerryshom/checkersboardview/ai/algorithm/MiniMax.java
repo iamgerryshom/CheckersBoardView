@@ -175,7 +175,7 @@ public class MiniMax {
             return root.getScore();
         }
 
-        final String playerId = root.isMaximizing() ? "ai" : root.getSnapshot().identifyOpponentPlayerId("ai");
+        final String playerId = root.isMaximizing() ? "computer" : root.getSnapshot().identifyOpponentPlayerId("computer");
         final String opponentPlayerId = root.getSnapshot().identifyOpponentPlayerId(playerId);
 
         List<Piece> pieces = root.getSnapshot().findCapturingPeaces(playerId);
@@ -189,7 +189,6 @@ public class MiniMax {
         for(Piece piece : pieces) {
 
             final List<LandingSpot> landingSpots = root.getSnapshot().commonLandingSpots(piece, piece.getRow(), piece.getCol());
-
 
             for(LandingSpot landingSpot : landingSpots) {
 
