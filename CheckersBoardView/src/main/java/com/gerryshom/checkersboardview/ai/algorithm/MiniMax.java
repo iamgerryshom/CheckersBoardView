@@ -2,6 +2,7 @@ package com.gerryshom.checkersboardview.ai.algorithm;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.gerryshom.checkersboardview.ai.model.Node;
 import com.gerryshom.checkersboardview.ai.model.Tree;
@@ -53,8 +54,7 @@ public class MiniMax {
         final Tree tree = new Tree();
         tree.setRoot(root);
 
-        recursivelyBuildChildren(root, depth);
-        backtrack(root, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        recursivelyBuildChildren(root, depth, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
         return tree;
 
@@ -168,12 +168,11 @@ public class MiniMax {
         return score;
     }
 
-
-    private static Node recursivelyBuildChildren(final Node root, final int depth) {
+    private static int recursivelyBuildChildren(final Node root, final int depth, int alpha, int beta) {
 
         if(depth == 0) {
             root.setScore(evaluateBoard(root.getSnapshot(), root.getMoveSequence().getDestination()));
-            return root;
+            return root.getScore();
         }
 
         final String playerId = root.isMaximizing() ? "ai" : root.getSnapshot().identifyOpponentPlayerId("ai");
@@ -185,9 +184,12 @@ public class MiniMax {
             pieces = root.getSnapshot().findMoveablePiecesByPlayerId(playerId);
         }
 
+        int bestScore = root.isMaximizing() ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+
         for(Piece piece : pieces) {
 
             final List<LandingSpot> landingSpots = root.getSnapshot().commonLandingSpots(piece, piece.getRow(), piece.getCol());
+
 
             for(LandingSpot landingSpot : landingSpots) {
 
@@ -201,7 +203,7 @@ public class MiniMax {
                 child.setMaximizing(!root.isMaximizing());
                 child.setMoveSequence(new MoveSequence(opponentPlayerId, Arrays.asList(move)));
                 child.setSnapshot(
-                        applyMoveSequence(child.getMoveSequence(), clonedCheckersBoard.deepClone())
+                        applyMoveSequence(child.getMoveSequence(), clonedCheckersBoard.deepClone()) // clone board and add it as snapshot
                 );
 
                 if(landingSpot.isAfterJump()) {
@@ -211,16 +213,41 @@ public class MiniMax {
                     captureRoot.setMoveSequence(root.getMoveSequence());
 
                     captureRoot.getChildren().add(child);
-                    child.getChildren().addAll(captureNodes(recursivelyBuildChainTree(child, piece)));
+                    child.getChildren().addAll(captureNodes(recursivelyBuildChainTree(child.deepClone(), piece)));
 
                     for(Node chain : child.getChildren()) {
-                        final Node deeperChild = recursivelyBuildChildren(chain, depth - 1);
-                        root.getChildren().add(deeperChild);
+                        final int chainScore = recursivelyBuildChildren(chain, depth - 1, alpha, beta);
+
+                        if (root.isMaximizing()) {
+                            bestScore = Math.max(bestScore, chainScore);
+                            alpha = Math.max(alpha, bestScore);
+                        } else {
+                            bestScore = Math.min(bestScore, chainScore);
+                            beta = Math.min(beta, bestScore);
+                        }
+
+                        //prune the branch
+                        if (beta <= alpha) break;
+
+                        root.getChildren().add(chain);
                     }
 
                 } else {
-                    final Node deeperChild = recursivelyBuildChildren(child, depth - 1);
-                    root.getChildren().add(deeperChild);
+
+                    final int childScore = recursivelyBuildChildren(child, depth - 1, alpha, beta);
+
+                    if (root.isMaximizing()) {
+                        bestScore = Math.max(bestScore, childScore);
+                        alpha = Math.max(alpha, bestScore);
+                    } else {
+                        bestScore = Math.min(bestScore, childScore);
+                        beta = Math.min(beta, bestScore);
+                    }
+
+                    //prune the branch
+                    if (beta <= alpha) break;
+
+                    root.getChildren().add(child);
                 }
 
 
@@ -228,7 +255,9 @@ public class MiniMax {
 
         }
 
-        return root;
+        root.setScore(bestScore);
+
+        return bestScore;
     }
 
     public static List<Node> captureNodes(final Node root) {

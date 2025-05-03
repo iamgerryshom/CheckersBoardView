@@ -13,6 +13,34 @@ public class Node {
     private boolean maximizing;
     private int score;
 
+    public Node() {
+    }
+
+    public Node(CheckersBoard snapshot, MoveSequence moveSequence, List<Node> children, boolean maximizing, int score) {
+        this.snapshot = snapshot;
+        this.moveSequence = moveSequence;
+        this.children = children;
+        this.maximizing = maximizing;
+        this.score = score;
+    }
+
+    public Node deepClone() {
+        return new Node(
+                snapshot, moveSequence.deepClone(),
+                deepCloneNodes(children),
+                maximizing,
+                score
+        );
+    }
+
+    private List<Node> deepCloneNodes(final List<Node> originalNodes) {
+        final List<Node> clonedNodes = new ArrayList<>();
+        for(Node originalNode : originalNodes) {
+            clonedNodes.add(originalNode.deepClone());
+        }
+        return clonedNodes;
+    }
+
     public boolean isMaximizing() {
         return maximizing;
     }
