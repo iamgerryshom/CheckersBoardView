@@ -356,16 +356,18 @@ public class CheckersBoardView extends View {
             listener.onPieceCompletedMoveSequence(new MoveSequence(remotePlayerId, moves));
         }
 
-        new Handler().postDelayed(()->{
+        if(checkersBoard.getOpponentId().equals(Player.computer().getId())) {
+            new Handler().postDelayed(()->{
 
-            MiniMax.search(checkersBoard, 5, new MiniMax.SearchListener() {
-                @Override
-                public void onComplete(MoveSequence moveSequence) {
-                    playOpponentMoveSequence(moveSequence);
-                }
-            });
+                MiniMax.search(checkersBoard, 5, new MiniMax.SearchListener() {
+                    @Override
+                    public void onComplete(MoveSequence moveSequence) {
+                        playOpponentMoveSequence(moveSequence);
+                    }
+                });
 
-        }, 600);
+            }, 600);
+        }
 
         moves.clear();
 
