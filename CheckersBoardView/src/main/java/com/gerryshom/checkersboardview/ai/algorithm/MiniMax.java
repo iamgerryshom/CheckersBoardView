@@ -292,7 +292,7 @@ public class MiniMax {
 
             final Move move = buildMove(piece.getId(), piece.getRow(), landingSpot.getRowCol().x, piece.getCol(), landingSpot.getRowCol().y);
 
-            final Piece jumpedPiece = clonedCheckersBoard.findCaptureBetweenRowAndCol(
+            final Piece jumpedPiece = clonedCheckersBoard.findCaptureBetweenRowCols(
                     piece.getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
             );
             if (jumpedPiece != null) {

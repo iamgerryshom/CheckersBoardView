@@ -336,7 +336,7 @@ public class CheckersBoardView extends View {
     private boolean capturing;
     private void processMove(final Move move) {
 
-        final Piece capturedPiece = checkersBoard.findCaptureBetweenRowAndCol(
+        final Piece capturedPiece = checkersBoard.findCaptureBetweenRowCols(
                 checkersBoard.findPieceById(move.getPieceId()).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
         );
 

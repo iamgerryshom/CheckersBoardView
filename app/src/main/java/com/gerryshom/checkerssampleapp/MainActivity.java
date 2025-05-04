@@ -60,13 +60,6 @@ public class MainActivity extends AppCompatActivity {
                 true //promoteOnlyAtLastRow
         );
 
-/*
-if you don't set any rules the default rules will be applied
- */
-        binding.checkersBoardView.setRule(captureRule);
-        binding.checkersBoardView.setRule(gameFlowRule);
-        binding.checkersBoardView.setRule(kingPieceRule);
-        binding.checkersBoardView.setRule(normalPieceRule);
 
         /**
          * Opponent can be computer or real human,

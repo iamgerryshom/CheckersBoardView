@@ -58,15 +58,6 @@ public class CheckersBoard {
         );
     }
 
-    /*
-    public CheckersBoard deepClone() {
-        final Gson gson = new Gson();
-        String json = gson.toJson(this);
-        return gson.fromJson(json, CheckersBoard.class);
-    }
-
-     */
-
     /**
      * returns the number of pieces for a player
      * @param playerId - id of the player to count remaining pieces
@@ -81,6 +72,12 @@ public class CheckersBoard {
         return pieceCount;
     }
 
+    /**
+     * finds all the pieces that can capture the opponent piece
+     * if they made a move
+     * @param playerId id of the player to look for the pieces
+     * @return list of the pieces
+     */
     public List<Piece> findCapturesByPlayerId(final String playerId) {
         final List<Piece> capturingPeaces = new ArrayList<>();
         for(Piece moveablePiece : findMoveablePiecesByPlayerId(playerId)) {
@@ -103,6 +100,11 @@ public class CheckersBoard {
                 : creatorId;
     }
 
+    /**
+     * finds all the pieces that belong to a particular player
+     * @param playerId the id of the player
+     * @return list of the pieces
+     */
     public List<Piece> findPiecesByPlayerId(final String playerId) {
         final List<Piece> playerPieces = new ArrayList<>();
         for(Piece piece : pieces) {
@@ -113,6 +115,11 @@ public class CheckersBoard {
         return playerPieces;
     }
 
+    /**
+     * creates new objects of all the pieces and adds them all to a list
+     * @param pieces original pieces
+     * @return list of cloned pieces
+     */
     public List<Piece> clonePieces(final List<Piece> pieces) {
         final List<Piece> clonedPieces = new ArrayList<>();
         for(Piece piece : pieces) {
@@ -227,40 +234,12 @@ public class CheckersBoard {
         for(LandingSpot landingSpot : commonLandingSpots(piece, row, col)) {
             if(landingSpot.isAfterJump()) {
                 possibleCaptures.add(
-                        findCaptureBetweenRowAndCol(
+                        findCaptureBetweenRowCols(
                                 piece.getPlayerId(), piece.getRow(), piece.getCol(), landingSpot.getRowCol().x, landingSpot.getRowCol().y
                         )
                 );
             }
         }
-
-        /*
-
-
-        final int[] rowDirections = {-2, -2, 2, 2};
-        final int[] colDirections = {-2, 2, -2, 2};
-
-        for(int i = 0; i < 4; i++) {
-            final int nextRow = row + rowDirections[i];
-            final int nextCol = col + colDirections[i];
-
-            final Piece pieceAtDestination = findPieceByRowAndCol(nextRow, nextCol);
-
-            final int middleRow = row + rowDirections[i] / 2; // Middle piece's row
-            final int middleCol = col + colDirections[i] / 2; // Middle piece's column
-
-            final Piece middlePiece = findPieceByRowAndCol(middleRow, middleCol);
-
-            if(middlePiece == null) continue;
-            if(middlePiece.getPlayerId().equals(playerId)) continue;
-            if(pieceAtDestination != null) continue;
-            if(!isValidRowCol(nextRow, nextCol)) continue;
-
-            possibleCaptures.add(middlePiece);
-
-        }
-
-         */
 
         return possibleCaptures;
 
@@ -271,7 +250,7 @@ public class CheckersBoard {
      * attempts to find an enemy piece that was jumped.
      * @return enemy piece object that was jumped or null if no enemy piece was jumped
      */
-    public Piece findCaptureBetweenRowAndCol(final String playerId, final int fromRow, final int fromCol, final int toRow, final int toCol) {
+    public Piece findCaptureBetweenRowCols(final String playerId, final int fromRow, final int fromCol, final int toRow, final int toCol) {
 
         // Determine direction of movement
         int rowDirection = Integer.compare(toRow - fromRow, 0);
@@ -336,7 +315,7 @@ public class CheckersBoard {
     }
 
     /**
-     * Calculates and returns a list of possible landing cells for the given piece.
+     * Calculates and returns a list of possible landing tiles for the given piece.
      *
      * @param piece                              The selected piece
      * @param allowedDirections                  Directions the piece is allowed to move
