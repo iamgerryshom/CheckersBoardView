@@ -1,7 +1,8 @@
 # CheckersBoardView
 
 **CheckersBoardView** is a customizable Android View for displaying a classic **Checkers** (Draughts) board.  
-You can easily integrate it into your app, customize the appearance with XML attributes, and even define custom game rules!
+You can easily integrate it into your app, customize the appearance with XML attributes, and even define custom game rules!  
+It also supports playing against a computer opponent powered by the **Minimax algorithm**.
 
 ---
 
@@ -13,6 +14,7 @@ You can easily integrate it into your app, customize the appearance with XML att
 - Lightweight and fast
 - Listen to board events like win, piece capture, and active player switches
 - Support for custom checkers game rules
+- Built-in AI opponent using the Minimax algorithm
 
 ---
 
@@ -22,7 +24,7 @@ You can easily integrate it into your app, customize the appearance with XML att
 <summary><b>Gradle</b></summary>
 
 ```gradle
-implementation 'com.github.iamgerryshom:CheckersBoardView:1.7.0'
+implementation 'com.github.iamgerryshom:CheckersBoardView:1.4.0'
 ```
 </details>
 
@@ -105,7 +107,7 @@ binding.checkersBoardView.setMyPlayerId(humanPlayerId)
 
 ---
 
-### Rules Configuration
+### Rules
 
 ```java
 // Define the rules for piece capturing
@@ -147,7 +149,7 @@ binding.checkersBoardView.setRule(normalPieceRule);
 
 ---
 
-### Playing Opponent MoveSequence
+### Playing Moves
 
 ```java
 /**
