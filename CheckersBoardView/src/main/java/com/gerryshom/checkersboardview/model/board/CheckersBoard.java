@@ -81,10 +81,10 @@ public class CheckersBoard {
         return pieceCount;
     }
 
-    public List<Piece> findCapturingPeaces(final String playerId) {
+    public List<Piece> findCapturesByPlayerId(final String playerId) {
         final List<Piece> capturingPeaces = new ArrayList<>();
         for(Piece moveablePiece : findMoveablePiecesByPlayerId(playerId)) {
-            if(!findPossibleCaptures(playerId, moveablePiece.getRow(), moveablePiece.getCol()).isEmpty())
+            if(!findCapturesByRowAndCol(moveablePiece, moveablePiece.getRow(), moveablePiece.getCol()).isEmpty())
                 capturingPeaces.add(moveablePiece);
         }
         return capturingPeaces;
@@ -142,7 +142,6 @@ public class CheckersBoard {
                 moveablePieces.add(p);
 
         }
-
         return moveablePieces;
     }
 
@@ -218,12 +217,25 @@ public class CheckersBoard {
 
     /**
      * returns all the pieces a player can possibly capture in all directions
-     * @param playerId the id of the player attempting to make a move
+     * @param piece the id of the player attempting to make a move
      * @return a list of the pieces
      */
-    public List<Piece> findPossibleCaptures(final String playerId, final int row, final int col) {
+    public List<Piece> findCapturesByRowAndCol(final Piece piece, final int row, final int col) {
 
         final List<Piece> possibleCaptures = new ArrayList<>();
+
+        for(LandingSpot landingSpot : commonLandingSpots(piece, row, col)) {
+            if(landingSpot.isAfterJump()) {
+                possibleCaptures.add(
+                        findCaptureBetweenRowAndCol(
+                                piece.getPlayerId(), piece.getRow(), piece.getCol(), landingSpot.getRowCol().x, landingSpot.getRowCol().y
+                        )
+                );
+            }
+        }
+
+        /*
+
 
         final int[] rowDirections = {-2, -2, 2, 2};
         final int[] colDirections = {-2, 2, -2, 2};
@@ -248,6 +260,8 @@ public class CheckersBoard {
 
         }
 
+         */
+
         return possibleCaptures;
 
     }
@@ -257,7 +271,7 @@ public class CheckersBoard {
      * attempts to find an enemy piece that was jumped.
      * @return enemy piece object that was jumped or null if no enemy piece was jumped
      */
-    public Piece findPossibleCapture(final String playerId, final int fromRow, final int fromCol, final int toRow, final int toCol) {
+    public Piece findCaptureBetweenRowAndCol(final String playerId, final int fromRow, final int fromCol, final int toRow, final int toCol) {
 
         // Determine direction of movement
         int rowDirection = Integer.compare(toRow - fromRow, 0);

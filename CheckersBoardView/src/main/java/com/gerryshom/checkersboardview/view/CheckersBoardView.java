@@ -84,11 +84,22 @@ public class CheckersBoardView extends View {
         default void onWin(final String winnerPlayerId){}
     }
 
+    public void reset() {
+        if(checkersBoard == null)
+            throw new RuntimeException("No CheckersBoard had been setup");
+        setup(activePlayerId, remotePlayerId);
+    }
+
+    public CheckersBoard getCheckersBoard() {
+        return checkersBoard;
+    }
+
     /**
      * adds a lister to observe various board activities
      */
-    public void addListener(final BoardListener listener) {
+    public CheckersBoardView addListener(final BoardListener listener) {
         listeners.add(listener);
+        return this;
     }
 
     public void setRule(final CaptureRule captureRule) {
@@ -128,9 +139,7 @@ public class CheckersBoardView extends View {
 
     }
 
-    public void playWithComputer() {
-        setCheckersBoard(CheckersBoard.createCheckersBoard(Player.human().getId(), Player.human().getId(), Player.computer().getId()));
-    }
+
 
     /**
      * sets the attributes defined in xml
@@ -154,14 +163,20 @@ public class CheckersBoardView extends View {
      * sets the id of the player created the board
      * @param myPlayerId the player id
      */
-    public void setMyPlayerId(final String myPlayerId) {
+    public CheckersBoardView setMyPlayerId(final String myPlayerId) {
         this.myPlayerId = myPlayerId;
+        return this;
+    }
+
+    public void setup(final String activePlayerId, final String opponentPlayerId) {
+        final CheckersBoard checkersBoard = CheckersBoard.createCheckersBoard(activePlayerId, myPlayerId, opponentPlayerId);
+        setCheckersBoard(checkersBoard);
     }
 
     /**
      * Called when a checkers board for a live match is created
      */
-    public void setCheckersBoard(final CheckersBoard checkersBoard) {
+    private void setCheckersBoard(final CheckersBoard checkersBoard) {
 
         this.checkersBoard = checkersBoard;
 
@@ -317,7 +332,7 @@ public class CheckersBoardView extends View {
     private boolean capturing;
     private void processMove(final Move move) {
 
-        final Piece capturedPiece = checkersBoard.findPossibleCapture(
+        final Piece capturedPiece = checkersBoard.findCaptureBetweenRowAndCol(
                 checkersBoard.findPieceById(move.getPieceId()).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
         );
 
@@ -329,11 +344,11 @@ public class CheckersBoardView extends View {
         moves.add(move);
 
         // Always find possible captures at the new spot
-        final List<Piece> possibleCaptures = checkersBoard.findPossibleCaptures(touchedPiece.getPlayerId(), move.getToRow(), move.getToCol());
+        final List<Piece> possibleCaptures = checkersBoard.findCapturesByRowAndCol(touchedPiece, move.getToRow(), move.getToCol());
 
         touchedPiece.setInCaptureChain(!possibleCaptures.isEmpty() && capturing);
 
-        playMove(touchedPiece, move, possibleCaptures.isEmpty());
+        playMove(touchedPiece, move, possibleCaptures.isEmpty(),()->{});
 
         if (move.getCapturedPieceId() != null && !possibleCaptures.isEmpty()) {
             // Was a capture move and more captures possible → continue chain
@@ -419,7 +434,7 @@ public class CheckersBoardView extends View {
      * @param move object containing movement metadata
      * @param isFinalMove ensures that a piece will not be crowned as king if it lands in the opponent's last row while in a capture chain
      */
-    private void playMove(final Piece piece, final Move move, final boolean isFinalMove) {
+    private void playMove(final Piece piece, final Move move, final boolean isFinalMove, final AnimationListener animationListener) {
 
         if(piece == null || move == null) return;
 
@@ -452,6 +467,8 @@ public class CheckersBoardView extends View {
                 for(BoardListener listener : listeners)
                     listener.onWin(piece.getPlayerId());
 
+            animationListener.onAnimationEnd();
+
             invalidate();
         });
 
@@ -466,27 +483,29 @@ public class CheckersBoardView extends View {
      * @param moveSequence containing list of step object containing movement metadata
      */
     public void playOpponentMoveSequence(final MoveSequence moveSequence) {
-
-        for(int i = 0; i < moveSequence.getMoves().size(); i++) {
-
-            final Move move = moveSequence.getMoves().get(i);
-
-            final int toRow = move.getToRow();
-            final int toCol = move.getToCol();
-
-            final PointF centerXY = calculateCenterXYByRowAndCol(toRow, toCol);
-            move.setToCenterX(centerXY.x);
-            move.setToCenterY(centerXY.y);
-
-            final Piece piece = checkersBoard.findPieceById(move.getPieceId());
-
-            playMove(piece, move, i == moveSequence.getMoves().size() - 1);
-
-        }
-
+        recursivelyPlayOpponentMoveSequence(moveSequence, 0);
     }
 
+    private void recursivelyPlayOpponentMoveSequence(final MoveSequence moveSequence, final int start) {
 
+        if(start > moveSequence.getMoves().size() - 1) return;
+
+        final Move move = moveSequence.getMoves().get(start);
+
+        final int toRow = move.getToRow();
+        final int toCol = move.getToCol();
+
+        final PointF centerXY = calculateCenterXYByRowAndCol(toRow, toCol);
+        move.setToCenterX(centerXY.x);
+        move.setToCenterY(centerXY.y);
+
+        final Piece piece = checkersBoard.findPieceById(move.getPieceId());
+
+        playMove(piece, move, start == moveSequence.getMoves().size() - 1, ()->{
+            recursivelyPlayOpponentMoveSequence(moveSequence, start + 1);
+        });
+
+    }
 
     private Move buildMove(
             final String pieceId,
@@ -540,7 +559,7 @@ public class CheckersBoardView extends View {
      */
     private void animatePieceMovement(final Piece piece, final float touchX, final float touchY, final AnimationListener listener) {
 
-        final long duration = 300L;
+        final long duration = 250L;
 
         // Get the new center position
         final PointF pointF = calculateNewCenterXAndY(touchX, touchY);
@@ -582,7 +601,7 @@ public class CheckersBoardView extends View {
         animatorX.start();
         animatorY.start();
 
-        new Handler().postDelayed(()->{listener.onAnimationEnd();},duration + 50L);
+        new Handler().postDelayed(()->{listener.onAnimationEnd();},duration);
     }
 
     /**
