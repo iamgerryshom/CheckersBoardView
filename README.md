@@ -102,7 +102,17 @@ binding.checkersBoardView.setMyPlayerId(humanPlayerId)
                 binding.tvMyPlayerPieceCount.setText("You: " + remainingPieceCount);
             }
         }
-    }).setup(humanPlayerId, opponentPlayerId); // Always call this last to prepare the board
+    })
+    /**
+    * best used for for multiplayer games where you need them to share the same board with exactly the same data
+    */
+    //.setup(checkersBoard) 
+
+    /**
+    * best used for single device player game
+    * playing with opponent on the same device eg playing with computer
+    */
+    .setup(humanPlayerId, opponentPlayerId);
 ```
 
 ---
