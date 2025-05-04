@@ -173,6 +173,10 @@ public class CheckersBoardView extends View {
         setCheckersBoard(checkersBoard);
     }
 
+    public void setup(final CheckersBoard checkersBoard) {
+        setCheckersBoard(checkersBoard);
+    }
+
     /**
      * Called when a checkers board for a live match is created
      */
