@@ -1,10 +1,16 @@
 package com.gerryshom.checkersboardview.ai.model;
 
 import com.gerryshom.checkersboardview.model.board.CheckersBoard;
+import com.gerryshom.checkersboardview.model.board.Piece;
+import com.gerryshom.checkersboardview.model.guides.LandingSpot;
+import com.gerryshom.checkersboardview.model.movement.Move;
 import com.gerryshom.checkersboardview.model.movement.MoveSequence;
+import com.gerryshom.checkersboardview.model.player.Player;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public class Node {
     private CheckersBoard snapshot = new CheckersBoard();
@@ -40,6 +46,290 @@ public class Node {
         }
         return clonedNodes;
     }
+
+    private int evaluateBoard(final CheckersBoard board) {
+
+        final String aiPlayerId = Player.computer().getId();
+        final String opponentPlayerId = board.identifyOpponentPlayerId(aiPlayerId);
+
+        int score = 0;
+
+        final List<Piece> aiPieces = board.findPiecesByPlayerId(aiPlayerId);
+        final List<Piece> opponentPieces = board.findPiecesByPlayerId(opponentPlayerId);
+
+        int aiPieceCount = 0;
+        int opponentPieceCount = 0;
+        int aiKingCount = 0;
+        int opponentKingCount = 0;
+        int aiCenterControl = 0;
+        int opponentCenterControl = 0;
+        int aiAdvance = 0;
+        int opponentAdvance = 0;
+        int aiPossibleCaptures = 0;
+        int opponentPossibleCaptures = 0;
+
+        // Score AI pieces
+        for (Piece piece : aiPieces) {
+            aiPieceCount++;
+            if (piece.isKing()) aiKingCount++;
+
+            int row = piece.getRow();
+            int col = piece.getCol();
+
+            // Encourage center control
+            if (col >= 2 && col <= 5) aiCenterControl++;
+
+            // Encourage advancement (AI goes from 0 → 7)
+            if (!piece.isKing()) aiAdvance += row;
+
+            for(LandingSpot landingSpot : board.commonLandingSpots(piece, piece.getRow(), piece.getCol()))
+                if(landingSpot.isAfterJump()) aiPossibleCaptures++;
+
+
+        }
+
+        // Score opponent pieces
+        for (Piece piece : opponentPieces) {
+            opponentPieceCount++;
+            if (piece.isKing()) opponentKingCount++;
+
+            int row = piece.getRow();
+            int col = piece.getCol();
+
+            // Encourage center control
+            if (col >= 2 && col <= 5) opponentCenterControl++;
+
+            // Opponent goes from 7 → 0
+            if (!piece.isKing()) opponentAdvance += (7 - row);
+
+            for(LandingSpot landingSpot : board.commonLandingSpots(piece, piece.getRow(), piece.getCol()))
+                if(landingSpot.isAfterJump()) opponentPossibleCaptures++;
+        }
+
+        // Mobility (number of moveable pieces)
+        int aiMobility = board.findMoveablePiecesByPlayerId(aiPlayerId).size();
+        int opponentMobility = board.findMoveablePiecesByPlayerId(opponentPlayerId).size();
+
+        // Material + Piece Type
+        score += (aiPieceCount - opponentPieceCount) * 100;
+        score += (aiKingCount - opponentKingCount) * 50;
+
+        // Center control
+        score += (aiCenterControl - opponentCenterControl) * 5;
+
+        // Advancement
+        score += (aiAdvance - opponentAdvance) * 2;
+
+        // Mobility
+        score += (aiMobility - opponentMobility) * 3;
+
+        score += (aiPossibleCaptures - opponentPossibleCaptures) * 30;
+
+        // Vulnerable pieces (subtract score for how many pieces could be captured)
+        score -= opponentPossibleCaptures * 20; // AI's pieces are vulnerable
+        score += aiPossibleCaptures * 20;       // Opponent's pieces are vulnerable
+
+        // Endgame bonuses/penalties
+        if (opponentPieceCount == 0 || opponentMobility == 0) score += 10000;
+        if (aiPieceCount == 0 || aiMobility == 0) score -= 10000;
+
+        return score;
+    }
+
+    public int recursivelyBuildChildren(final int depth, int alpha, int beta) {
+
+        if(depth == 0) {
+            setScore(evaluateBoard(getSnapshot()));
+            return getScore();
+        }
+
+        final String playerId = isMaximizing() ? Player.computer().getId() : getSnapshot().identifyOpponentPlayerId(Player.computer().getId());
+        final String opponentPlayerId = getSnapshot().identifyOpponentPlayerId(playerId);
+
+        List<Piece> pieces = getSnapshot().findCapturesByPlayerId(playerId);
+
+        if(pieces.isEmpty()) {
+            pieces = getSnapshot().findMoveablePiecesByPlayerId(playerId);
+        }
+
+        int bestScore = isMaximizing() ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+
+        for(Piece piece : pieces) {
+
+            final List<LandingSpot> landingSpots = getSnapshot().commonLandingSpots(piece, piece.getRow(), piece.getCol());
+
+            for(LandingSpot landingSpot : landingSpots) {
+
+                final CheckersBoard clonedCheckersBoard = getSnapshot().deepClone();
+
+                final Move move = buildMove(
+                        piece.getId(), piece.getRow(), landingSpot.getRowCol().x, piece.getCol(), landingSpot.getRowCol().y
+                );
+
+                final Node child = new Node();
+                child.setMaximizing(!isMaximizing());
+                child.setMoveSequence(new MoveSequence(opponentPlayerId, Arrays.asList(move)));
+                child.setSnapshot(
+                        applyMoveSequence(child.getMoveSequence(), clonedCheckersBoard.deepClone()) // clone board and add it as snapshot
+                );
+
+                if(landingSpot.isAfterJump()) {
+
+                    final Node captureRoot = new Node();
+                    captureRoot.setSnapshot(getSnapshot());
+                    captureRoot.setMoveSequence(getMoveSequence());
+
+                    captureRoot.getChildren().add(child);
+                    child.getChildren().addAll(child.deepClone().recursivelyBuildChainTree(piece).captureNodes());
+
+                    for(Node chain : child.getChildren()) {
+                        final int chainScore = chain.recursivelyBuildChildren(depth - 1, alpha, beta);
+
+                        if (isMaximizing()) {
+                            bestScore = Math.max(bestScore, chainScore);
+                            alpha = Math.max(alpha, bestScore);
+                        } else {
+                            bestScore = Math.min(bestScore, chainScore);
+                            beta = Math.min(beta, bestScore);
+                        }
+
+                        //prune the branch
+                        if (beta <= alpha) break;
+
+                        getChildren().add(chain);
+                    }
+
+                } else {
+
+                    final int childScore = child.recursivelyBuildChildren( depth - 1, alpha, beta);
+
+                    if (isMaximizing()) {
+                        bestScore = Math.max(bestScore, childScore);
+                        alpha = Math.max(alpha, bestScore);
+                    } else {
+                        bestScore = Math.min(bestScore, childScore);
+                        beta = Math.min(beta, bestScore);
+                    }
+
+                    //prune the branch
+                    if (beta <= alpha) break;
+
+                    getChildren().add(child);
+                }
+
+
+            }
+
+        }
+
+        setScore(bestScore);
+
+        return bestScore;
+    }
+
+    private List<Node> captureNodes() {
+        List<Node> result = new ArrayList<>();
+        collectCapturePaths(new ArrayList<>(), result, getSnapshot());
+        return result;
+    }
+
+    private void collectCapturePaths(
+            List<Move> currentMoves,
+            List<Node> result,
+            CheckersBoard rootSnapshot
+    ) {
+        if (getMoveSequence() != null) {
+            currentMoves.addAll(getMoveSequence().getMoves());
+        }
+
+        if (getChildren().isEmpty()) {
+            // Create new board state with full move sequence and root snapshot
+            final Node pathState = new Node();
+            final MoveSequence fullSequence = new MoveSequence(getMoveSequence().getDestination(), new ArrayList<>(currentMoves));
+            pathState.setMoveSequence(fullSequence);
+            pathState.setSnapshot(rootSnapshot.deepClone());  // clone to avoid side-effects
+
+            result.add(pathState);
+        } else {
+            for (Node child : getChildren()) {
+                child.collectCapturePaths(new ArrayList<>(currentMoves), result, rootSnapshot);
+            }
+        }
+    }
+
+    private CheckersBoard applyMoveSequence(final MoveSequence moveSequence, final CheckersBoard checkersBoard){
+        for(Move move : moveSequence.getMoves()) {
+            final Piece piece = checkersBoard.findPieceById(move.getPieceId());
+
+            if(move.isCapture()) {
+                final Piece capturedPiece = checkersBoard.findPieceById(move.getCapturedPieceId());
+                checkersBoard.getPieces().remove(capturedPiece);
+            }
+
+            piece.setKing(checkersBoard.crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow()));
+
+            //set row and col for the new position
+            piece.setRow(move.getToRow());
+            piece.setCol(move.getToCol());
+
+        }
+        return checkersBoard;
+    }
+
+    private Node recursivelyBuildChainTree(final Piece piece) {
+
+        final CheckersBoard originalCheckersBoard = getSnapshot().deepClone();
+
+        final List<LandingSpot> landingSpots = originalCheckersBoard.commonLandingSpots(
+                piece, piece.getRow(), piece.getCol()
+        );
+
+        for (LandingSpot landingSpot : landingSpots) {
+            if (!landingSpot.isAfterJump()) continue;  // Only follow jumps
+
+            final CheckersBoard clonedCheckersBoard = originalCheckersBoard.deepClone();
+            final Node child = new Node();
+
+            final Move move = buildMove(piece.getId(), piece.getRow(), landingSpot.getRowCol().x, piece.getCol(), landingSpot.getRowCol().y);
+
+            final Piece jumpedPiece = clonedCheckersBoard.findCaptureBetweenRowCols(
+                    piece.getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
+            );
+            if (jumpedPiece != null) {
+                move.setCapturedPieceId(jumpedPiece.getId());
+            }
+
+            final MoveSequence moveSequence = new MoveSequence(originalCheckersBoard.identifyOpponentPlayerId(piece.getPlayerId()), Arrays.asList(move));
+
+            child.setMoveSequence(moveSequence);
+
+            final CheckersBoard updatedBoard = applyMoveSequence(moveSequence, clonedCheckersBoard);
+            child.setSnapshot(updatedBoard);
+
+            // Get piece in new location
+            final Piece updatedPiece = updatedBoard.findPieceById(piece.getId());
+
+            final Node deeperChild = child.recursivelyBuildChainTree(updatedPiece);
+            getChildren().add(deeperChild);
+        }
+
+        return this;
+    }
+
+
+    private Move buildMove(final String pieceId, final int fromRow, final int toRow,
+                                 final int fromCol, final int toCol) {
+        final Move move = new Move();
+        move.setId(UUID.randomUUID().toString());
+        move.setFromRow(fromRow);
+        move.setToRow(toRow);
+        move.setFromCol(fromCol);
+        move.setToCol(toCol);
+        move.setPieceId(pieceId);
+
+        return move;
+    }
+
 
     public boolean isMaximizing() {
         return maximizing;
