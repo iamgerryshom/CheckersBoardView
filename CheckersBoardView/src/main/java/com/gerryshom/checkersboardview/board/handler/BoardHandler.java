@@ -26,6 +26,8 @@ import java.util.UUID;
 
 public class BoardHandler {
 
+    private long movementDurationMillis = 250L;
+
     private CheckersBoard checkersBoard;
     private final List<LandingSpot> landingSpots = new ArrayList<>();
 
@@ -245,6 +247,7 @@ public class BoardHandler {
 
         }
 
+        //uses animation to move piece to new position
         animatePieceMovement(piece, move.getToCenterX(), move.getToCenterY(), ()->{
 
             final String opponentPlayerId = checkersBoard.identifyOpponentPlayerId(piece.getPlayerId());
@@ -259,9 +262,12 @@ public class BoardHandler {
 
             animationListener.onAnimationEnd();
 
-            //invalidate();
         });
 
+    }
+
+    public void setMovementDurationMillis(final long movementDurationMillis) {
+        this.movementDurationMillis = movementDurationMillis;
     }
 
     private interface AnimationListener {
@@ -348,8 +354,6 @@ public class BoardHandler {
      */
     private void animatePieceMovement(final Piece piece, final float touchX, final float touchY, final AnimationListener listener) {
 
-        final long duration = 250L;
-
         // Get the new center position
         final PointF pointF = calculateNewCenterXAndY(touchX, touchY);
 
@@ -359,11 +363,11 @@ public class BoardHandler {
 
         // Create two ValueAnimators, one for X and one for Y
         final ValueAnimator animatorX = ValueAnimator.ofFloat(startX, pointF.x);
-        animatorX.setDuration(duration); // Duration of the animation (in milliseconds)
+        animatorX.setDuration(movementDurationMillis); // Duration of the animation (in milliseconds)
         animatorX.setInterpolator(new AccelerateDecelerateInterpolator()); // Smooth animation curve
 
         final ValueAnimator animatorY = ValueAnimator.ofFloat(startY, pointF.y);
-        animatorY.setDuration(duration); // Duration of the animation (in milliseconds)
+        animatorY.setDuration(movementDurationMillis); // Duration of the animation (in milliseconds)
         animatorY.setInterpolator(new AccelerateDecelerateInterpolator()); // Smooth animation curve
 
         // Update the position of the piece during the animation
@@ -390,7 +394,7 @@ public class BoardHandler {
         animatorX.start();
         animatorY.start();
 
-        new Handler().postDelayed(()->{listener.onAnimationEnd();},duration);
+        new Handler().postDelayed(()->{listener.onAnimationEnd();},movementDurationMillis);
     }
 
     public List<LandingSpot> getLandingSpots() {
