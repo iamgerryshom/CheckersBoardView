@@ -6,31 +6,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Tree {
+public class GameTree {
     private Node root = new Node();
     private static final Random random = new Random();
     private Node optimalNode;
+    private CheckersBoard checkersBoard;
+    private int depth;
 
-    public Tree() {
+    public GameTree() {
     }
 
-    public Tree(final CheckersBoard checkersBoard, final int depth) {
-        build(checkersBoard, depth);
-        optimalNode = findOptimalNode();
+    public GameTree(final CheckersBoard checkersBoard, final int depth) {
+        this.checkersBoard = checkersBoard;
+        this.depth = depth;
     }
 
-    private Tree build(final CheckersBoard checkersBoard, final int depth) {
+    public GameTree build() {
 
         final Node root = new Node();
         root.setSnapshot(checkersBoard);
         root.setMaximizing(true);
 
-        final Tree tree = new Tree();
-        tree.setRoot(root);
-
         root.recursivelyBuildChildren(depth, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
-        return tree;
+        setRoot(root);
+
+        setOptimalNode(findOptimalNode());
+
+        return this;
 
     }
 
