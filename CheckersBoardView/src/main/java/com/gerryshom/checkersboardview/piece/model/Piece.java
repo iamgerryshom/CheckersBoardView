@@ -1,6 +1,6 @@
-package com.gerryshom.checkersboardview.model.board;
+package com.gerryshom.checkersboardview.piece.model;
 
-import com.gerryshom.checkersboardview.model.player.Player;
+import com.gerryshom.checkersboardview.player.Player;
 
 public class Piece {
     private String id;

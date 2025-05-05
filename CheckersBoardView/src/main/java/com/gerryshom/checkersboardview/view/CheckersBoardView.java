@@ -22,19 +22,18 @@ import androidx.core.content.ContextCompat;
 
 import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.ai.algorithm.MiniMax;
-import com.gerryshom.checkersboardview.defaults.DefaultPaint;
-import com.gerryshom.checkersboardview.defaults.DefaultRule;
-import com.gerryshom.checkersboardview.helper.BoardHelper;
-import com.gerryshom.checkersboardview.model.board.CheckersBoard;
-import com.gerryshom.checkersboardview.model.board.Piece;
-import com.gerryshom.checkersboardview.model.guides.LandingSpot;
-import com.gerryshom.checkersboardview.model.movement.Move;
-import com.gerryshom.checkersboardview.model.movement.MoveSequence;
-import com.gerryshom.checkersboardview.model.player.Player;
-import com.gerryshom.checkersboardview.model.rules.CaptureRule;
-import com.gerryshom.checkersboardview.model.rules.GameFlowRule;
-import com.gerryshom.checkersboardview.model.rules.KingPieceRule;
-import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
+import com.gerryshom.checkersboardview.board.model.CheckersBoard;
+import com.gerryshom.checkersboardview.paint.DefaultPaint;
+import com.gerryshom.checkersboardview.rules.defaults.DefaultRule;
+import com.gerryshom.checkersboardview.piece.model.Piece;
+import com.gerryshom.checkersboardview.landingSpot.LandingSpot;
+import com.gerryshom.checkersboardview.movement.model.Move;
+import com.gerryshom.checkersboardview.movement.model.MoveSequence;
+import com.gerryshom.checkersboardview.player.Player;
+import com.gerryshom.checkersboardview.rules.model.CaptureRule;
+import com.gerryshom.checkersboardview.rules.model.GameFlowRule;
+import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
+import com.gerryshom.checkersboardview.rules.model.NormalPieceRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,18 +102,22 @@ public class CheckersBoardView extends View {
     }
 
     public void setRule(final CaptureRule captureRule) {
+        if(getCheckersBoard() == null) throw new RuntimeException("CheckersBoard has not been set yet");
         checkersBoard.setCaptureRule(captureRule);
     }
 
     public void setRule(final NormalPieceRule normalPieceRule) {
+        if(getCheckersBoard() == null) throw new RuntimeException("CheckersBoard has not been set yet");
         checkersBoard.setNormalPieceRule(normalPieceRule);
     }
 
     public void setRule(final KingPieceRule kingPieceRule) {
+        if(getCheckersBoard() == null) throw new RuntimeException("CheckersBoard has not been set yet");
         checkersBoard.setKingPieceRule(kingPieceRule);
     }
 
     public void setRule(final GameFlowRule gameFlowRule) {
+        if(getCheckersBoard() == null) throw new RuntimeException("CheckersBoard has not been set yet");
         checkersBoard.setGameFlowRule(gameFlowRule);
     }
 
@@ -138,7 +141,6 @@ public class CheckersBoardView extends View {
         listeners.add(new BoardListener() {}); // helps to avoid null pointer exception
 
     }
-
 
 
     /**
@@ -291,8 +293,8 @@ public class CheckersBoardView extends View {
     private void handleMove(final float touchX, final float touchY) {
         if (touchedPiece == null) return;
 
-        final Point newRowCol = calculateRowColByXAndY(touchX, touchY);
-        final PointF newCenterXY = calculateCenterXYByRowAndCol(newRowCol.x, newRowCol.y);
+        final Point newRowCol = checkersBoard.calculateRowColByXAndY(touchX, touchY);
+        final PointF newCenterXY = checkersBoard.calculateCenterXYByRowAndCol(newRowCol.x, newRowCol.y);
 
         final Move move = buildMove(
                 touchedPiece.getId(),
@@ -404,7 +406,7 @@ public class CheckersBoardView extends View {
     private void addLandingSpots(final Piece piece, final int row, final int col) {
 
         landingSpots.clear();
-        landingSpots.addAll(checkersBoard.commonLandingSpots(piece, row, col));
+        landingSpots.addAll(checkersBoard.findLandingSpots(piece, row, col));
 
         invalidate();
     }
@@ -499,7 +501,7 @@ public class CheckersBoardView extends View {
         final int toRow = move.getToRow();
         final int toCol = move.getToCol();
 
-        final PointF centerXY = calculateCenterXYByRowAndCol(toRow, toCol);
+        final PointF centerXY = checkersBoard.calculateCenterXYByRowAndCol(toRow, toCol);
         move.setToCenterX(centerXY.x);
         move.setToCenterY(centerXY.y);
 
@@ -543,7 +545,7 @@ public class CheckersBoardView extends View {
      */
     private boolean validateMove(final Move move) {
 
-        final Point destinationRowCol = calculateRowColByXAndY(move.getToCenterX(), move.getToCenterY());
+        final Point destinationRowCol = checkersBoard.calculateRowColByXAndY(move.getToCenterX(), move.getToCenterY());
 
         for(LandingSpot landingSpot : landingSpots) {
             final Point landingRowCol = landingSpot.getRowCol();
@@ -553,7 +555,6 @@ public class CheckersBoardView extends View {
         return false;
 
     }
-
 
     /**
      * visually animates the movement of a piece from initial co-ordinates to the final co-ordinates
@@ -612,25 +613,10 @@ public class CheckersBoardView extends View {
      * resolves the touch co-ordinates into a perfect center co-ordinates
      */
     private PointF calculateNewCenterXAndY(final float touchX, final float touchY) {
-        final Point rowCol = calculateRowColByXAndY(touchX, touchY);
-        return calculateCenterXYByRowAndCol(rowCol.x, rowCol.y);
+        final Point rowCol = checkersBoard.calculateRowColByXAndY(touchX, touchY);
+        return checkersBoard.calculateCenterXYByRowAndCol(rowCol.x, rowCol.y);
     }
 
-    /**
-     * resolves touch co-ordinates on the board into row and col on the board
-     * @param touchX touched x coordinate
-     * @param touchY touched y coordinate
-     */
-    private Point calculateRowColByXAndY(
-            final float touchX,
-            final float touchY) {
-        return BoardHelper.calculateRowColByXAndY(getWidth(), touchX, touchY);
-    }
-
-    private PointF calculateCenterXYByRowAndCol(
-            final int row, final int col) {
-        return BoardHelper.calculateCellCenterByRowAndCol(getWidth(), row, col);
-    }
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
@@ -676,7 +662,7 @@ public class CheckersBoardView extends View {
         final float fillRadius = innerRadius * 0.85f;      // Smaller filled circle radius (closer to the inner circle)
 
         for (LandingSpot landingSpot : landingSpots) {
-            final PointF centerXY = calculateCenterXYByRowAndCol(landingSpot.getRowCol().x, landingSpot.getRowCol().y);
+            final PointF centerXY = checkersBoard.calculateCenterXYByRowAndCol(landingSpot.getRowCol().x, landingSpot.getRowCol().y);
 
             // Draw the outermost border circle (light green)
             canvas.drawCircle(centerXY.x, centerXY.y, outerRadius, outerPaint);

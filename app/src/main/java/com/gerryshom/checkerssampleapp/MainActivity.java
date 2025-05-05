@@ -2,19 +2,15 @@ package com.gerryshom.checkerssampleapp;
 
 import android.os.Bundle;
 
-import com.gerryshom.checkersboardview.model.board.CheckersBoard;
-import com.gerryshom.checkersboardview.model.movement.MoveSequence;
-import com.gerryshom.checkersboardview.model.player.Player;
-import com.gerryshom.checkersboardview.model.rules.CaptureRule;
-import com.gerryshom.checkersboardview.model.rules.GameFlowRule;
-import com.gerryshom.checkersboardview.model.rules.KingPieceRule;
-import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
+import com.gerryshom.checkersboardview.movement.model.MoveSequence;
+import com.gerryshom.checkersboardview.player.Player;
+import com.gerryshom.checkersboardview.rules.model.CaptureRule;
+import com.gerryshom.checkersboardview.rules.model.GameFlowRule;
+import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
+import com.gerryshom.checkersboardview.rules.model.NormalPieceRule;
 import com.gerryshom.checkersboardview.view.CheckersBoardView;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.os.Handler;
-import android.provider.Settings;
 
 
 import com.gerryshom.checkerssampleapp.databinding.ActivityMainBinding;

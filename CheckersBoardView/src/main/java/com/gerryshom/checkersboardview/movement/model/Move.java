@@ -1,4 +1,4 @@
-package com.gerryshom.checkersboardview.model.movement;
+package com.gerryshom.checkersboardview.movement.model;
 
 import java.io.Serializable;
 

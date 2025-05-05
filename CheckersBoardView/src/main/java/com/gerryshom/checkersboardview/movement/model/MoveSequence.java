@@ -1,4 +1,4 @@
-package com.gerryshom.checkersboardview.model.movement;
+package com.gerryshom.checkersboardview.movement.model;
 
 import java.util.ArrayList;
 import java.util.List;

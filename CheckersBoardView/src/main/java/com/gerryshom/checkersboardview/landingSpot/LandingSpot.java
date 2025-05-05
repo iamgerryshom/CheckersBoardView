@@ -1,7 +1,6 @@
-package com.gerryshom.checkersboardview.model.guides;
+package com.gerryshom.checkersboardview.landingSpot;
 
 import android.graphics.Point;
-import android.graphics.PointF;
 
 public class LandingSpot {
     private String id;

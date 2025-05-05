@@ -1,4 +1,4 @@
-package com.gerryshom.checkersboardview.enums;
+package com.gerryshom.checkersboardview.movement.enums;
 
 import android.graphics.Point;
 

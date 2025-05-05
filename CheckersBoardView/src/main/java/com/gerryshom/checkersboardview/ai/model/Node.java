@@ -1,11 +1,11 @@
 package com.gerryshom.checkersboardview.ai.model;
 
-import com.gerryshom.checkersboardview.model.board.CheckersBoard;
-import com.gerryshom.checkersboardview.model.board.Piece;
-import com.gerryshom.checkersboardview.model.guides.LandingSpot;
-import com.gerryshom.checkersboardview.model.movement.Move;
-import com.gerryshom.checkersboardview.model.movement.MoveSequence;
-import com.gerryshom.checkersboardview.model.player.Player;
+import com.gerryshom.checkersboardview.board.model.CheckersBoard;
+import com.gerryshom.checkersboardview.piece.model.Piece;
+import com.gerryshom.checkersboardview.landingSpot.LandingSpot;
+import com.gerryshom.checkersboardview.movement.model.Move;
+import com.gerryshom.checkersboardview.movement.model.MoveSequence;
+import com.gerryshom.checkersboardview.player.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,7 +82,7 @@ public class Node {
             // Encourage advancement (AI goes from 0 → 7)
             if (!piece.isKing()) aiAdvance += row;
 
-            for(LandingSpot landingSpot : board.commonLandingSpots(piece, piece.getRow(), piece.getCol()))
+            for(LandingSpot landingSpot : board.findLandingSpots(piece, piece.getRow(), piece.getCol()))
                 if(landingSpot.isAfterJump()) aiPossibleCaptures++;
 
 
@@ -102,7 +102,7 @@ public class Node {
             // Opponent goes from 7 → 0
             if (!piece.isKing()) opponentAdvance += (7 - row);
 
-            for(LandingSpot landingSpot : board.commonLandingSpots(piece, piece.getRow(), piece.getCol()))
+            for(LandingSpot landingSpot : board.findLandingSpots(piece, piece.getRow(), piece.getCol()))
                 if(landingSpot.isAfterJump()) opponentPossibleCaptures++;
         }
 
@@ -136,6 +136,12 @@ public class Node {
         return score;
     }
 
+    /**
+     * recursively build the children up to a given depth
+     * @param depth number of levels to build
+     * @param alpha i wish i knew
+     *
+     */
     public int recursivelyBuildChildren(final int depth, int alpha, int beta) {
 
         if(depth == 0) {
@@ -146,8 +152,10 @@ public class Node {
         final String playerId = isMaximizing() ? Player.computer().getId() : getSnapshot().identifyOpponentPlayerId(Player.computer().getId());
         final String opponentPlayerId = getSnapshot().identifyOpponentPlayerId(playerId);
 
+        //first consider pieces that would capture opponents pieces
         List<Piece> pieces = getSnapshot().findCapturesByPlayerId(playerId);
 
+        //use moveable pieces instead if no capture pieces were found
         if(pieces.isEmpty()) {
             pieces = getSnapshot().findMoveablePiecesByPlayerId(playerId);
         }
@@ -156,7 +164,7 @@ public class Node {
 
         for(Piece piece : pieces) {
 
-            final List<LandingSpot> landingSpots = getSnapshot().commonLandingSpots(piece, piece.getRow(), piece.getCol());
+            final List<LandingSpot> landingSpots = getSnapshot().findLandingSpots(piece, piece.getRow(), piece.getCol());
 
             for(LandingSpot landingSpot : landingSpots) {
 
@@ -182,8 +190,8 @@ public class Node {
                     captureRoot.getChildren().add(child);
                     child.getChildren().addAll(child.deepClone().recursivelyBuildChainTree(piece).captureNodes());
 
-                    for(Node chain : child.getChildren()) {
-                        final int chainScore = chain.recursivelyBuildChildren(depth - 1, alpha, beta);
+                    for(Node chainChild : child.getChildren()) {
+                        final int chainScore = chainChild.recursivelyBuildChildren(depth - 1, alpha, beta);
 
                         if (isMaximizing()) {
                             bestScore = Math.max(bestScore, chainScore);
@@ -196,7 +204,7 @@ public class Node {
                         //prune the branch
                         if (beta <= alpha) break;
 
-                        getChildren().add(chain);
+                        getChildren().add(chainChild);
                     }
 
                 } else {
@@ -227,6 +235,13 @@ public class Node {
         return bestScore;
     }
 
+    /**
+     * each node has a moveSequence with a single move in a capture chain
+     * this method takes all the nodes that would form all the possible capture chain paths
+     * then builds a single node for each path with a moveSequence having all the moves made in that capture chain
+     *
+     * voila
+     */
     private List<Node> captureNodes() {
         List<Node> result = new ArrayList<>();
         collectCapturePaths(new ArrayList<>(), result, getSnapshot());
@@ -257,6 +272,9 @@ public class Node {
         }
     }
 
+    /**
+     * simulates the moveSequence that was made foe the current checkersBoard
+     */
     private CheckersBoard applyMoveSequence(final MoveSequence moveSequence, final CheckersBoard checkersBoard){
         for(Move move : moveSequence.getMoves()) {
             final Piece piece = checkersBoard.findPieceById(move.getPieceId());
@@ -276,11 +294,17 @@ public class Node {
         return checkersBoard;
     }
 
+    /**
+     * builds nodes for all the capture chain paths
+     * called only after the first capture has been made and piece has landed in the new rowCol position
+     *
+     * this means the final tree returned by this method is one move short (ie the first capture move) but its known anyway before calling this method so it can be combined later
+     */
     private Node recursivelyBuildChainTree(final Piece piece) {
 
         final CheckersBoard originalCheckersBoard = getSnapshot().deepClone();
 
-        final List<LandingSpot> landingSpots = originalCheckersBoard.commonLandingSpots(
+        final List<LandingSpot> landingSpots = originalCheckersBoard.findLandingSpots(
                 piece, piece.getRow(), piece.getCol()
         );
 

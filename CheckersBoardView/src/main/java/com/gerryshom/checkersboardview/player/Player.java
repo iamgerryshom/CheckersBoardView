@@ -1,4 +1,4 @@
-package com.gerryshom.checkersboardview.model.player;
+package com.gerryshom.checkersboardview.player;
 
 public class Player {
     private String id;

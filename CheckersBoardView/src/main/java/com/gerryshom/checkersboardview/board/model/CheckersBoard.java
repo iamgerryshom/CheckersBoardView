@@ -1,19 +1,19 @@
-package com.gerryshom.checkersboardview.model.board;
+package com.gerryshom.checkersboardview.board.model;
 
 
 import android.graphics.Point;
+import android.graphics.PointF;
 
 import androidx.annotation.NonNull;
 
-import com.gerryshom.checkersboardview.enums.Direction;
-import com.gerryshom.checkersboardview.helper.PieceHelper;
-import com.gerryshom.checkersboardview.model.guides.LandingSpot;
-import com.gerryshom.checkersboardview.model.player.Player;
-import com.gerryshom.checkersboardview.model.rules.CaptureRule;
-import com.gerryshom.checkersboardview.model.rules.GameFlowRule;
-import com.gerryshom.checkersboardview.model.rules.KingPieceRule;
-import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
-import com.google.gson.Gson;
+import com.gerryshom.checkersboardview.movement.enums.Direction;
+import com.gerryshom.checkersboardview.piece.model.Piece;
+import com.gerryshom.checkersboardview.landingSpot.LandingSpot;
+import com.gerryshom.checkersboardview.player.Player;
+import com.gerryshom.checkersboardview.rules.model.CaptureRule;
+import com.gerryshom.checkersboardview.rules.model.GameFlowRule;
+import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
+import com.gerryshom.checkersboardview.rules.model.NormalPieceRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -145,7 +145,7 @@ public class CheckersBoard {
         for(Piece p : pieces) {
             if(!p.getPlayerId().equals(playerId)) continue;
 
-            if(!commonLandingSpots(p, p.getRow(), p.getCol()).isEmpty())
+            if(!findLandingSpots(p, p.getRow(), p.getCol()).isEmpty())
                 moveablePieces.add(p);
 
         }
@@ -153,9 +153,10 @@ public class CheckersBoard {
     }
 
     /**
-     * a common method for find landing highlights
+     * a common method for find landing spots
+     * applies the game rules and everything -> Boring staff
      */
-    public List<LandingSpot> commonLandingSpots(final Piece p, final int row, final int col) {
+    public List<LandingSpot> findLandingSpots(final Piece p, final int row, final int col) {
         return findLandingSpots(p, row, col,
                 p.isKing() || !normalPieceRule.isRestrictToForwardMovement()
                         ? Arrays.asList(Direction.TOP_LEFT, Direction.TOP_RIGHT, Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT)
@@ -170,9 +171,47 @@ public class CheckersBoard {
     /**
      * finds a piece object in a list using the row and column
      */
-    // Helper method to find a piece at a given position
     public Piece findPieceByRowAndCol(final int row, final int col) {
-        return PieceHelper.findPieceByRowAndCol(pieces, boardWidth, row, col);
+        for (Piece p : pieces) {
+            Point piecePosition = calculateRowColByXAndY(p.getCenterX(), p.getCenterY());
+            if (piecePosition.x == row && piecePosition.y == col) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * resolves touch co-ordinates on the board into row and col on the board
+     * @param touchX touched x coordinate
+     * @param touchY touched y coordinate
+     */
+    public Point calculateRowColByXAndY(final float touchX, final float touchY) {
+        // Get the width and height of the entire view
+        int cellSize = boardWidth / 8; // Assuming the board is 8x8
+
+        // Calculate the row and column based on the touch coordinates
+        int row = (int) (touchY / cellSize);
+        int col = (int) (touchX / cellSize);
+
+        // Ensure the row and col are within valid bounds (0 to 7 for an 8x8 board)
+        row = Math.max(0, Math.min(7, row));
+        col = Math.max(0, Math.min(7, col));
+
+        // Return the row and column as a Point
+        return new Point(row, col);
+    }
+
+    public PointF calculateCenterXYByRowAndCol(final int row, final int col) {
+        // Get the width and height of the entire view
+        int cellSize = boardWidth / 8; // Assuming the board is 8x8
+
+        // Calculate the center of the cell
+        float centerX = col * cellSize + cellSize / 2f;
+        float centerY = row * cellSize + cellSize / 2f;
+
+        // Return the center as a Point
+        return new PointF((int) centerX, (int) centerY);
     }
 
     /**
@@ -231,7 +270,7 @@ public class CheckersBoard {
 
         final List<Piece> possibleCaptures = new ArrayList<>();
 
-        for(LandingSpot landingSpot : commonLandingSpots(piece, row, col)) {
+        for(LandingSpot landingSpot : findLandingSpots(piece, row, col)) {
             if(landingSpot.isAfterJump()) {
                 possibleCaptures.add(
                         findCaptureBetweenRowCols(
@@ -315,7 +354,8 @@ public class CheckersBoard {
     }
 
     /**
-     * Calculates and returns a list of possible landing tiles for the given piece.
+     * Calculates and returns a list of possible landing tiles for the given piece and rules
+     * Seems to be very important.
      *
      * @param piece                              The selected piece
      * @param allowedDirections                  Directions the piece is allowed to move

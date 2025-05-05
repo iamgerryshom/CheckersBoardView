@@ -1,6 +1,7 @@
 package com.gerryshom.checkersboardview.ai.model;
 
-import com.gerryshom.checkersboardview.model.board.CheckersBoard;
+
+import com.gerryshom.checkersboardview.board.model.CheckersBoard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,10 @@ public class GameTree {
         this.depth = depth;
     }
 
+    /**
+     * this generates the complete game tree
+     * some optimizations done using alpha beta pruning
+     */
     public GameTree build() {
 
         final Node root = new Node();
@@ -37,6 +42,12 @@ public class GameTree {
 
     }
 
+    /**
+     * randomly picks any first level node with a score that matches
+     * that of the root node
+     *
+     * i know its stupid
+     */
     public Node findOptimalNode() {
         final List<Node> children = new ArrayList<>();
         for(Node child : root.getChildren()) {

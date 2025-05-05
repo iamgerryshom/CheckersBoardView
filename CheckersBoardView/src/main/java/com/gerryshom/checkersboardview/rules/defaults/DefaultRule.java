@@ -1,9 +1,9 @@
-package com.gerryshom.checkersboardview.defaults;
+package com.gerryshom.checkersboardview.rules.defaults;
 
-import com.gerryshom.checkersboardview.model.rules.CaptureRule;
-import com.gerryshom.checkersboardview.model.rules.GameFlowRule;
-import com.gerryshom.checkersboardview.model.rules.KingPieceRule;
-import com.gerryshom.checkersboardview.model.rules.NormalPieceRule;
+import com.gerryshom.checkersboardview.rules.model.CaptureRule;
+import com.gerryshom.checkersboardview.rules.model.GameFlowRule;
+import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
+import com.gerryshom.checkersboardview.rules.model.NormalPieceRule;
 
 public class DefaultRule {
     public static CaptureRule captureRule() {

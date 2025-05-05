@@ -1,4 +1,4 @@
-package com.gerryshom.checkersboardview.defaults;
+package com.gerryshom.checkersboardview.paint;
 
 import android.graphics.Color;
 import android.graphics.Paint;

@@ -4,10 +4,9 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.gerryshom.checkersboardview.ai.model.GameTree;
-import com.gerryshom.checkersboardview.model.board.CheckersBoard;
-import com.gerryshom.checkersboardview.model.movement.MoveSequence;
+import com.gerryshom.checkersboardview.board.model.CheckersBoard;
+import com.gerryshom.checkersboardview.movement.model.MoveSequence;
 
-import java.util.Random;
 import java.util.concurrent.Executors;
 
 public class MiniMax {

@@ -1,4 +1,4 @@
-package com.gerryshom.checkersboardview.model.rules;
+package com.gerryshom.checkersboardview.rules.model;
 
 public class CaptureRule {
     public CaptureRule(boolean forceCapture, boolean allowMultiCapture, boolean mustTakeLongestJumpPath) {
