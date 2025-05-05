@@ -112,7 +112,17 @@ public class MainActivity extends AppCompatActivity {
                             binding.tvMyPlayerPieceCount.setText("You : " + remainingPieceCount);
                         }
                     }
-                }).setup(humanPlayerId, opponentPlayerId); // this should be called last, it prepares the board for the game
+                })
+                /**
+                 * best used for for multiplayer games where you need them to share the same board with exactly the same data
+                 */
+                //.setup(checkersBoard)
+
+                /**
+                 * best used for single device player game
+                 * playing with opponent on the same device eg playing with computer
+                 */
+                .setup(humanPlayerId, opponentPlayerId);
 
     }
 
