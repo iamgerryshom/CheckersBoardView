@@ -183,11 +183,13 @@ binding.checkersBoardView.playOpponentMoveSequence(remotePlayerMoveSequence);
 
 ## 📸 Screenshots
 
-| Default Theme |
-|:-------------:|
-| <img src="assets/screenshot1.png" alt="Default Board" width="400"/> |
+<p align="center">
+  <br/>
+  <img src="assets/screenshot.jpeg" alt="In-game Screenshot" width="400"/>
+</p>
 
 ---
+
 
 ## 🤝 Contributing
 
