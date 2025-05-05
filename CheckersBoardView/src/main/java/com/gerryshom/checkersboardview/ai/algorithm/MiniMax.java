@@ -16,7 +16,7 @@ public class MiniMax {
         void onComplete(final MoveSequence moveSequence);
     }
 
-    public static void search(final CheckersBoard originalCheckersBoard, final int depth, final SearchListener listener) {
+    public static void searchOptimalMoveSequence(final CheckersBoard originalCheckersBoard, final int depth, final SearchListener listener) {
 
         Executors.newSingleThreadExecutor().execute(()->{
             final CheckersBoard clonedCheckersBoard = originalCheckersBoard.deepClone();

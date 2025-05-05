@@ -378,14 +378,14 @@ public class CheckersBoardView extends View {
         if(checkersBoard.getOpponentId().equals(Player.computer().getId())) {
             new Handler().postDelayed(()->{
 
-                MiniMax.search(checkersBoard, 5, new MiniMax.SearchListener() {
+                MiniMax.searchOptimalMoveSequence(checkersBoard, 5, new MiniMax.SearchListener() {
                     @Override
                     public void onComplete(MoveSequence moveSequence) {
                         playOpponentMoveSequence(moveSequence);
                     }
                 });
 
-            }, 600);
+            }, 350);
         }
 
         moves.clear();
