@@ -2,17 +2,18 @@ package com.gerryshom.checkerssampleapp;
 
 import android.os.Bundle;
 
+import com.gerryshom.checkersboardview.board.listener.BoardListener;
 import com.gerryshom.checkersboardview.movement.model.MoveSequence;
 import com.gerryshom.checkersboardview.player.Player;
 import com.gerryshom.checkersboardview.rules.model.CaptureRule;
 import com.gerryshom.checkersboardview.rules.model.GameFlowRule;
 import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
 import com.gerryshom.checkersboardview.rules.model.NormalPieceRule;
-import com.gerryshom.checkersboardview.view.CheckersBoardView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 
+import com.gerryshom.checkersboardview.view.CheckersBoardView;
 import com.gerryshom.checkerssampleapp.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
@@ -66,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         final String humanPlayerId = "Human"; // your human playerId
 
         binding.checkersBoardView.setMyPlayerId(humanPlayerId)
-                .addListener(new CheckersBoardView.BoardListener() {
+                .addBoardListener(new BoardListener() {
                     @Override
                     public void onPieceCompletedMoveSequence(MoveSequence moveSequence) {
                         /**

@@ -10,6 +10,7 @@ import com.gerryshom.checkersboardview.movement.enums.Direction;
 import com.gerryshom.checkersboardview.piece.model.Piece;
 import com.gerryshom.checkersboardview.landingSpot.LandingSpot;
 import com.gerryshom.checkersboardview.player.Player;
+import com.gerryshom.checkersboardview.rules.defaults.DefaultRule;
 import com.gerryshom.checkersboardview.rules.model.CaptureRule;
 import com.gerryshom.checkersboardview.rules.model.GameFlowRule;
 import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
@@ -30,10 +31,10 @@ public class CheckersBoard {
     private Player creator;
     private Player opponent;
     private int boardWidth;
-    private NormalPieceRule normalPieceRule;
-    private KingPieceRule kingPieceRule;
-    private CaptureRule captureRule;
-    private GameFlowRule gameFlowRule;
+    private NormalPieceRule normalPieceRule = DefaultRule.normalPieceRule();
+    private KingPieceRule kingPieceRule = DefaultRule.kingPieceRule();
+    private CaptureRule captureRule = DefaultRule.captureRule();
+    private GameFlowRule gameFlowRule = DefaultRule.gameFlowRule();
 
     public CheckersBoard(String id, List<Piece> pieces, String creatorId, String opponentId, long createdAt, String activePlayerId, Player creator, Player opponent, int boardWidth, NormalPieceRule normalPieceRule, KingPieceRule kingPieceRule, CaptureRule captureRule, GameFlowRule gameFlowRule) {
         this.id = id;
