@@ -145,21 +145,25 @@ public class BoardHandler {
     private boolean capturing;
     private void processMove(final Move move) {
 
-        final Piece capturedPiece = checkersBoard.findCaptureBetweenRowCols(
-                checkersBoard.findPieceById(move.getPieceId()).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
-        );
-
-        if(capturedPiece != null) {
-            move.setCapturedPieceId(capturedPiece.getId());
-            capturing = true;
-        }
-
         moves.add(move);
 
-        // Always find possible captures at the new spot
-        final List<Piece> possibleCaptures = checkersBoard.findCapturesByRowAndCol(touchedPiece, move.getToRow(), move.getToCol());
+        touchedPiece.setRow(move.getToRow());
+        touchedPiece.setCol(move.getToCol());
 
-        touchedPiece.setInCaptureChain(!possibleCaptures.isEmpty() && capturing);
+        final List<Piece> possibleCaptures = new ArrayList<>();
+
+        if(move.isCapture()) {
+
+            final Piece capturedPiece = checkersBoard.findPieceById(move.getCapturedPieceId());
+            checkersBoard.getPieces().remove(capturedPiece);
+
+            for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners)
+                listener.onPieceCaptured(capturedPiece.getPlayerId(), checkersBoard.getPieceCountByPlayerId(capturedPiece.getPlayerId()));
+
+            // Always find possible captures at the new spot
+            possibleCaptures.addAll(checkersBoard.findCapturesByRowAndCol(touchedPiece, move.getToRow(), move.getToCol()));
+            touchedPiece.setInCaptureChain(!possibleCaptures.isEmpty() && capturing);
+        }
 
         playMove(touchedPiece, move, possibleCaptures.isEmpty(),()->{});
 
@@ -230,22 +234,9 @@ public class BoardHandler {
 
         if(piece == null || move == null) return;
 
-        piece.setRow(move.getToRow());
-        piece.setCol(move.getToCol());
-
         if(!piece.isKing() && isFinalMove)
             piece.setKing(checkersBoard.crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow()));
 
-        if(move.getCapturedPieceId() != null) {
-            final Piece capturedPiece = checkersBoard.findPieceById(move.getCapturedPieceId());
-            checkersBoard.getPieces().remove(capturedPiece);
-
-            final int remainingPieces = checkersBoard.getPieceCountByPlayerId(capturedPiece.getPlayerId());
-
-            for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners)
-                listener.onPieceCaptured(capturedPiece.getPlayerId(), remainingPieces);
-
-        }
 
         //uses animation to move piece to new position
         animatePieceMovement(piece, move.getToCenterX(), move.getToCenterY(), ()->{
@@ -297,6 +288,18 @@ public class BoardHandler {
 
         final Piece piece = checkersBoard.findPieceById(move.getPieceId());
 
+        piece.setRow(move.getToRow());
+        piece.setCol(move.getToCol());
+
+        if(move.isCapture()) {
+            final Piece capturedPiece = checkersBoard.findPieceById(move.getCapturedPieceId());
+            checkersBoard.getPieces().remove(capturedPiece);
+
+            for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners)
+                listener.onPieceCaptured(capturedPiece.getPlayerId(), checkersBoard.getPieceCountByPlayerId(capturedPiece.getPlayerId()));
+
+        }
+
         playMove(piece, move, start == moveSequence.getMoves().size() - 1, ()->{
             recursivelyPlayOpponentMoveSequence(moveSequence, start + 1);
         });
@@ -326,6 +329,15 @@ public class BoardHandler {
         move.setToCol(toCol);
         move.setFromRow(fromRow);
         move.setToRow(toRow);
+
+        final Piece capturedPiece = checkersBoard.findCaptureBetweenRowCols(
+                checkersBoard.findPieceById(move.getPieceId()).getPlayerId(), move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol()
+        );
+
+        if(capturedPiece != null) {
+            move.setCapturedPieceId(capturedPiece.getId());
+            capturing = true;
+        }
 
         return move;
     }
