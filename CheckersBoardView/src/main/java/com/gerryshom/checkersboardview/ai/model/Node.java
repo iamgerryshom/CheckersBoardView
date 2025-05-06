@@ -9,7 +9,10 @@ import com.gerryshom.checkersboardview.player.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class Node {
@@ -188,6 +191,7 @@ public class Node {
                     captureRoot.setMoveSequence(getMoveSequence());
 
                     captureRoot.getChildren().add(child);
+
                     child.getChildren().addAll(child.deepClone().recursivelyBuildChainTree(piece).captureNodes());
 
                     for(Node chainChild : child.getChildren()) {
@@ -234,6 +238,91 @@ public class Node {
 
         return bestScore;
     }
+
+    private List<Piece> orderPieces(final List<Piece> unorderedPieces) {
+
+        final Map<Piece, Integer> piecesThatCanStartCaptureChain = new HashMap<>();
+        final List<Piece> piecesThatCanCapture = new ArrayList<>();
+        final List<Piece> piecesThatWillMoveNormally = new ArrayList<>();
+
+        for(Piece piece : unorderedPieces) {
+            final List<LandingSpot> landingSpots = getSnapshot().findLandingSpots(piece, piece.getRow(), piece.getCol());
+            for(LandingSpot landingSpot : landingSpots) {
+                if(landingSpot.isAfterJump()) {
+
+                    final CheckersBoard clonedCheckersBoard = getSnapshot().deepClone();
+
+                    final Move move = buildMove(
+                            piece.getId(), piece.getRow(), landingSpot.getRowCol().x, piece.getCol(), landingSpot.getRowCol().y
+                    );
+
+                    final Node child = new Node();
+                    child.setMaximizing(!isMaximizing());
+                    child.setMoveSequence(new MoveSequence(clonedCheckersBoard.identifyOpponentPlayerId(piece.getPlayerId()), Arrays.asList(move)));
+                    child.setSnapshot(
+                            applyMoveSequence(child.getMoveSequence(), clonedCheckersBoard.deepClone()) // clone board and add it as snapshot
+                    );
+
+                    final Node captureRoot = new Node();
+                    captureRoot.setSnapshot(getSnapshot());
+                    captureRoot.setMoveSequence(getMoveSequence());
+
+                    captureRoot.getChildren().add(child);
+                    child.getChildren().addAll(child.deepClone().recursivelyBuildChainTree(piece).captureNodes());
+
+                    int moveCount = 0;
+                    for (Node chainChild : child.getChildren()) {
+                        // Calculate the length of the move sequence for this particular child node
+                        final int count = chainChild.getMoveSequence().getMoves().size();
+
+                        // If the current capture chain is longer than the previous longest, update moveCount
+                        if (count > moveCount) {
+                            moveCount = count;
+
+                            // Check if piece already exists in the map
+                            if (piecesThatCanStartCaptureChain.containsKey(piece)) {
+                                // Update the value by keeping the maximum between existing value and count
+                                piecesThatCanStartCaptureChain.put(piece, Math.max(piecesThatCanStartCaptureChain.get(piece), count));
+                            } else {
+                                // If the piece is not in the map, add it with the current count
+                                piecesThatCanStartCaptureChain.put(piece, count);
+                            }
+                        }
+                    }
+
+                    piecesThatCanCapture.add(piece);
+                    continue;
+                }
+
+                piecesThatWillMoveNormally.add(piece);
+
+            }
+
+        }
+
+        if (!piecesThatCanStartCaptureChain.isEmpty()) {
+            Piece maxPiece = null;
+            int maxCount = Integer.MIN_VALUE;
+
+            for (Map.Entry<Piece, Integer> entry : piecesThatCanStartCaptureChain.entrySet()) {
+                if (entry.getValue() > maxCount) {
+                    maxCount = entry.getValue();
+                    maxPiece = entry.getKey();
+                }
+            }
+
+            return Collections.singletonList(maxPiece);
+        } else if (!piecesThatCanCapture.isEmpty()) {
+            // If no pieces can start a capture chain, return pieces that can capture
+            return piecesThatCanCapture;
+        } else {
+            // If no pieces can capture, return pieces that will move normally
+            return piecesThatWillMoveNormally;
+        }
+
+
+    }
+
 
     /**
      * each node has a moveSequence with a single move in a capture chain
