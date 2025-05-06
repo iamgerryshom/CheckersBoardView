@@ -24,7 +24,7 @@ It also supports playing against a computer opponent powered by the **Minimax al
 <summary><b>Gradle</b></summary>
 
 ```gradle
-implementation 'com.github.iamgerryshom:CheckersBoardView:1.9.0'
+implementation 'com.github.iamgerryshom:CheckersBoardView:2.0.1'
 ```
 </details>
 
