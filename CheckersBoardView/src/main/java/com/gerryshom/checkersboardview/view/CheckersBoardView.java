@@ -20,6 +20,7 @@ import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.board.handler.BoardHandler;
 import com.gerryshom.checkersboardview.board.listener.BoardListener;
 import com.gerryshom.checkersboardview.board.model.CheckersBoard;
+import com.gerryshom.checkersboardview.movement.model.Move;
 import com.gerryshom.checkersboardview.movement.model.MoveSequence;
 import com.gerryshom.checkersboardview.paint.DefaultPaint;
 import com.gerryshom.checkersboardview.piece.model.Piece;
@@ -107,6 +108,18 @@ public class CheckersBoardView extends View {
         getDimensions((width, height)->{
             boardHandler.setup((int) width, activePlayerId, opponentPlayerId);
         });
+    }
+
+    public void setup(final CheckersBoard checkersBoard) {
+        getDimensions((width, height)->{
+            checkersBoard.setBoardWidth((int) width);
+            boardHandler.setup(checkersBoard);
+            invalidate();
+        });
+    }
+
+    public void playOpponentMoveSequence(final MoveSequence moveSequence) {
+        boardHandler.playOpponentMoveSequence(moveSequence);
     }
 
     public void reset() {
