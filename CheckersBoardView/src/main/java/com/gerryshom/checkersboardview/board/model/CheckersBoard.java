@@ -166,7 +166,7 @@ public class CheckersBoard {
                         : Arrays.asList(Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT),
                 normalPieceRule.isAllowBackwardCapture(),
                 kingPieceRule.getMaxMoveSteps(),
-                kingPieceRule.getMaxLandingDistanceAfterCapture());
+                kingPieceRule.getMaxLandingDistanceAfterCapture(), false);
     }
 
     /**
@@ -366,14 +366,16 @@ public class CheckersBoard {
      * @return List of Highlight positions where the piece can land
      */
     public List<LandingSpot> findLandingSpots(final Piece piece,
-                                                 final int row,
-                                                 final int col,
-                                                 final List<Direction> allowedDirections,
-                                                 final boolean allowHighlightsInForbiddenDirections,
-                                                 final int maxKingMoveSteps,
-                                                 final int maxKingJumpLandingDistance) {
+                                              final int row,
+                                              final int col,
+                                              final List<Direction> allowedDirections,
+                                              final boolean allowHighlightsInForbiddenDirections,
+                                              final int maxKingMoveSteps,
+                                              final int maxKingJumpLandingDistance,
+                                              final boolean prioritizeCaptures) {
 
         final List<LandingSpot> landingSpots = new ArrayList<>();
+        final List<LandingSpot> captureSpots = new ArrayList<>();
 
         for (Direction dir : Direction.values()) {
             int currentRow = row;
@@ -397,6 +399,7 @@ public class CheckersBoard {
                     if (!justJumped) {
                         moveSteps++;
                         if (allowedDirections.contains(dir) && (maxKingMoveSteps == 0 || moveSteps <= maxKingMoveSteps)) {
+                            // Add to regular moves list instead of directly to landingSpots
                             landingSpots.add(new LandingSpot(new Point(nextRow, nextCol), false));
                         }
                         if (!piece.isKing() || (maxKingMoveSteps != 0 && moveSteps >= maxKingMoveSteps)) break;
@@ -408,7 +411,8 @@ public class CheckersBoard {
                         // Only add highlights if we're within the allowed landing distance
                         if ((allowedDirections.contains(dir) || allowHighlightsInForbiddenDirections)
                                 && (maxKingJumpLandingDistance == 0 || jumpLandingSteps <= maxKingJumpLandingDistance)) {
-                            landingSpots.add(new LandingSpot(new Point(nextRow, nextCol), false));
+                            // This is a capture landing spot, add to captureSpots
+                            captureSpots.add(new LandingSpot(new Point(nextRow, nextCol), true));
                         }
 
                         // Break if we've reached the max landing distance
@@ -432,13 +436,15 @@ public class CheckersBoard {
                         if (allowedDirections.contains(dir) || allowHighlightsInForbiddenDirections) {
                             // For regular pieces, just add the landing highlight and stop
                             if (!piece.isKing()) {
-                                landingSpots.add(new LandingSpot(new Point(jumpRow, jumpCol), true));
+                                // This is a capture landing, add to captureSpots
+                                captureSpots.add(new LandingSpot(new Point(jumpRow, jumpCol), true));
                                 break;
                             }
 
                             // For kings with maxJumpLandingDistance = 0, add the landing spot and continue
                             if (maxKingJumpLandingDistance == 0) {
-                                landingSpots.add(new LandingSpot(new Point(jumpRow, jumpCol), true));
+                                // This is a capture landing, add to captureSpots
+                                captureSpots.add(new LandingSpot(new Point(jumpRow, jumpCol), true));
                                 justJumped = true;
                                 jumpLandingSteps = 0;
                                 currentRow = jumpRow;
@@ -448,7 +454,8 @@ public class CheckersBoard {
                             else {
                                 // The immediate landing spot after capture is always allowed
                                 if (maxKingJumpLandingDistance >= 1) {
-                                    landingSpots.add(new LandingSpot(new Point(jumpRow, jumpCol), true));
+                                    // This is a capture landing, add to captureSpots
+                                    captureSpots.add(new LandingSpot(new Point(jumpRow, jumpCol), true));
                                 }
 
                                 // If maxJumpLandingDistance is exactly 1, break here
@@ -478,6 +485,13 @@ public class CheckersBoard {
             }
         }
 
+        // If prioritizeCaptures is true and there are capture moves available, return only capture moves
+        if (prioritizeCaptures && !captureSpots.isEmpty()) {
+            return captureSpots;
+        }
+
+        // Otherwise, return all found landing spots (both regular and capture moves)
+        landingSpots.addAll(captureSpots);
         return landingSpots;
     }
 
