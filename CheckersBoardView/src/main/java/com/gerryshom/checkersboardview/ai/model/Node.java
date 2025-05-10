@@ -373,11 +373,15 @@ public class Node {
                 checkersBoard.getPieces().remove(capturedPiece);
             }
 
-            piece.setKing(checkersBoard.crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow()));
-
             //set row and col for the new position
             piece.setRow(move.getToRow());
             piece.setCol(move.getToCol());
+
+            if(!piece.isKing()) {
+                piece.setKing(
+                        checkersBoard.crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow())
+                );
+            }
 
         }
         return checkersBoard;
