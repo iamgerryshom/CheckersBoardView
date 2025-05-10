@@ -136,6 +136,40 @@ public class CheckersBoard {
         return null;
     }
 
+    public boolean isTherePossibleCaptures(final String playerId) {
+        return !findPiecesWithPossibleCapturesByPlayerId(playerId)
+                .isEmpty();
+    }
+
+    public boolean canPieceCapture(final Piece piece) {
+        for(Piece pieceWithPossibleCapture : findPiecesWithPossibleCapturesByPlayerId(piece.getPlayerId())) {
+            if(pieceWithPossibleCapture.getId().equals(piece.getId()))
+                return true;
+        }
+        return false;
+    }
+
+    public List<Piece> findPiecesWithPossibleCapturesByPlayerId(final String playerId) {
+
+        final List<Piece> piecesWithPossibleCaptures = new ArrayList<>();
+
+        for(Piece moveablePiece : findMoveablePiecesByPlayerId(playerId)) {
+            final List<LandingSpot> landingSpots = findLandingSpots(
+                    moveablePiece, moveablePiece.getRow(), moveablePiece.getCol()
+            );
+            for(LandingSpot landingSpot : landingSpots) {
+                if(landingSpot.isAfterJump()) {
+                    piecesWithPossibleCaptures.add(moveablePiece);
+                    break;
+                }
+
+            }
+        }
+
+        return piecesWithPossibleCaptures;
+
+    }
+
     /**
      * checks all the player's pieces to see if they have any legal moves left
      * @param playerId id of the player
@@ -166,7 +200,7 @@ public class CheckersBoard {
                         : Arrays.asList(Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT),
                 normalPieceRule.isAllowBackwardCapture(),
                 kingPieceRule.getMaxMoveSteps(),
-                kingPieceRule.getMaxLandingDistanceAfterCapture(), false);
+                kingPieceRule.getMaxLandingDistanceAfterCapture(), captureRule.isForceCapture());
     }
 
     /**

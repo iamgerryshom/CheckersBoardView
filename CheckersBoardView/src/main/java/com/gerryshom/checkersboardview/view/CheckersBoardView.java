@@ -20,6 +20,7 @@ import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.board.handler.BoardHandler;
 import com.gerryshom.checkersboardview.board.listener.BoardListener;
 import com.gerryshom.checkersboardview.board.model.CheckersBoard;
+import com.gerryshom.checkersboardview.highlights.Highlight;
 import com.gerryshom.checkersboardview.movement.model.Move;
 import com.gerryshom.checkersboardview.movement.model.MoveSequence;
 import com.gerryshom.checkersboardview.paint.DefaultPaint;
@@ -90,6 +91,10 @@ public class CheckersBoardView extends View {
                 invalidate();
             }
 
+            @Override
+            public void onHighlightsAdded(List<Highlight> highlights) {
+                invalidate();
+            }
         });
 
     }
@@ -257,9 +262,14 @@ public class CheckersBoardView extends View {
 
         if(boardHandler.getCheckersBoard() == null) return;
 
+        for(Highlight highlight : boardHandler.getHighlights()) {
+            drawHighlight(canvas, highlight.getCenterX(), highlight.getCenterY(), new Paint(), getWidth() / 8 , "#2EB32E");
+        }
+
         drawPieces(canvas);
 
         drawLandingSpots(canvas);
+
 
     }
 
@@ -354,8 +364,8 @@ public class CheckersBoardView extends View {
         paint.setAntiAlias(true);
 
         // Draw highlight first if the piece is highlighted
-        if (piece.isHighlighted()) {
-            drawLandingSpot(canvas, piece, paint, cellSize);
+        if (piece.isSelected()) {
+            drawHighlight(canvas, piece.getCenterX(), piece.getCenterY(), paint, cellSize, "#FF5722");
         }
 
         // Now draw the actual piece (king or normal)
@@ -366,23 +376,25 @@ public class CheckersBoardView extends View {
         }
     }
 
-    private void drawLandingSpot(Canvas canvas, Piece piece, Paint paint, int cellSize) {
+    private void drawHighlight(final Canvas canvas, final float centerX, final float centerY, final Paint paint, final int cellSize, final String colorHex) {
+
         // Calculate the size and position of the highlight square based on the cell size
         float squareSize = cellSize * 0.75f; // Inner square size (75% of cell size to avoid overlap)
-        float left = piece.getCenterX() - squareSize / 2;
-        float top = piece.getCenterY() - squareSize / 2;
-        float right = piece.getCenterX() + squareSize / 2;
-        float bottom = piece.getCenterY() + squareSize / 2;
+        float left = centerX - squareSize / 2;
+        float top = centerY - squareSize / 2;
+        float right = centerX + squareSize / 2;
+        float bottom = centerY + squareSize / 2;
 
         // Set up the paint for the highlight square (highlight color with toned-down opacity)
-        paint.setColor(Color.parseColor("#FF5722")); // Lighter orange (hex: #FFB74D)
+        paint.setColor(Color.parseColor(colorHex)); // Lighter orange (hex: #FFB74D)
         paint.setStyle(Paint.Style.FILL);
         paint.setAlpha(180); // Reduced opacity
+        paint.setAntiAlias(true);
         canvas.drawRect(left, top, right, bottom, paint); // Draw the square
 
         // Draw the border around the square
         Paint borderPaint = new Paint();
-        borderPaint.setColor(Color.parseColor("#FF5722")); // Darker orange border (hex: #FF5722)
+        borderPaint.setColor(Color.parseColor(colorHex)); // Darker orange border (hex: #FF5722)
         borderPaint.setStyle(Paint.Style.STROKE);
         borderPaint.setStrokeWidth(8f); // Thicker border width
         borderPaint.setAlpha(255); // Full opacity for the border
@@ -392,6 +404,7 @@ public class CheckersBoardView extends View {
         float borderOffset = 4f;
         canvas.drawRect(left - borderOffset, top - borderOffset, right + borderOffset, bottom + borderOffset, borderPaint); // Draw the border
     }
+
 
     private void drawKingPiece(Canvas canvas, Piece piece, Paint paint, int cellSize) {
         // Draw the king piece

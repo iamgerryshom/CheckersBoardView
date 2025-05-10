@@ -1,6 +1,9 @@
 package com.gerryshom.checkerssampleapp;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 
 import com.gerryshom.checkersboardview.board.listener.BoardListener;
 import com.gerryshom.checkersboardview.movement.model.MoveSequence;
@@ -20,6 +23,11 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
 
+    private CaptureRule captureRule;
+    private GameFlowRule gameFlowRule;
+    private KingPieceRule kingPieceRule;
+    private NormalPieceRule normalPieceRule;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,35 +36,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         setClickListener();
-
-        // Define the rules for piece capturing
-        final CaptureRule captureRule = new CaptureRule(
-                true, //forceCapture
-                true, //allowMultiCapture
-                false //mustTakeLongestJumpPath
-        );
-
-// Define the rules for overall game flow
-        final GameFlowRule gameFlowRule = new GameFlowRule(
-                12, //maxTurnsWithoutCapture
-                60 //maxTurnDurationSeconds
-        );
-
-// Define the rules for King pieces
-        final KingPieceRule kingPieceRule = new KingPieceRule(
-                0, //maxMoveSteps (0 = infinity)
-                0, //maxLandingStepsAfterCapture (0 == infinity)
-                false, //canChangeDirectionDuringMultiJump
-                false //canMoveImmediatelyAfterPromotion
-        );
-
-// Define the rules for Normal pieces
-        final NormalPieceRule normalPieceRule = new NormalPieceRule(
-                true, //restrictToForwardMovement
-                true, //allowBackwardCapture
-                true //promoteOnlyAtLastRow
-        );
-
 
         /**
          * Opponent can be computer or real human,
@@ -125,6 +104,33 @@ public class MainActivity extends AppCompatActivity {
 
     private void init() {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
+        // Define the rules for piece capturing
+        captureRule = new CaptureRule(
+                true, //forceCapture
+                true, //allowMultiCapture
+                false //mustTakeLongestJumpPath
+        );
+
+        // Define the rules for overall game flow
+        gameFlowRule = new GameFlowRule(
+                12, //maxTurnsWithoutCapture
+                60 //maxTurnDurationSeconds
+        );
+
+        // Define the rules for King pieces
+        kingPieceRule = new KingPieceRule(
+                0, //maxMoveSteps (0 = infinity)
+                0, //maxLandingStepsAfterCapture (0 == infinity)
+                false, //canChangeDirectionDuringMultiJump
+                false //canMoveImmediatelyAfterPromotion
+        );
+
+        // Define the rules for Normal pieces
+        normalPieceRule = new NormalPieceRule(
+                true, //restrictToForwardMovement
+                true, //allowBackwardCapture
+                true //promoteOnlyAtLastRow
+        );
     }
 
     private void reset() {
@@ -136,6 +142,24 @@ public class MainActivity extends AppCompatActivity {
 
     private void setClickListener() {
         binding.btnReset.setOnClickListener(v->reset());
+
+        binding.btnStartGame.setOnClickListener(v->{
+
+            binding.ruleLayout.setVisibility(View.GONE);
+            binding.boardLayout.setVisibility(View.VISIBLE);
+
+            captureRule.setForceCapture(binding.forceCapture.isChecked());
+            normalPieceRule.setAllowBackwardCapture(binding.captureBackwards.isChecked());
+
+            kingPieceRule.setMaxMoveSteps(Integer.parseInt(binding.inputMaxNormalSteps.getText().toString().trim()));
+            kingPieceRule.setMaxLandingDistanceAfterCapture(Integer.parseInt(binding.inputMaxStepsAfterCapture.getText().toString().trim()));
+
+            binding.checkersBoardView.setRule(captureRule);
+            binding.checkersBoardView.setRule(normalPieceRule);
+            binding.checkersBoardView.setRule(kingPieceRule);
+
+
+        });
     }
 
 }

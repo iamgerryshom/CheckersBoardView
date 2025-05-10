@@ -33,7 +33,7 @@ public class DefaultRule {
     public static NormalPieceRule normalPieceRule() {
         return new NormalPieceRule(
                 true,
-                true,
+                false,
                 true
         );
     }

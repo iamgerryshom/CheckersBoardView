@@ -9,6 +9,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import com.gerryshom.checkersboardview.ai.algorithm.MiniMax;
 import com.gerryshom.checkersboardview.board.listener.BoardListener;
 import com.gerryshom.checkersboardview.board.model.CheckersBoard;
+import com.gerryshom.checkersboardview.highlights.Highlight;
 import com.gerryshom.checkersboardview.landingSpot.LandingSpot;
 import com.gerryshom.checkersboardview.movement.model.Move;
 import com.gerryshom.checkersboardview.movement.model.MoveSequence;
@@ -21,6 +22,7 @@ import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
 import com.gerryshom.checkersboardview.rules.model.NormalPieceRule;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +32,7 @@ public class BoardHandler {
 
     private CheckersBoard checkersBoard;
     private final List<LandingSpot> landingSpots = new ArrayList<>();
+    private final List<Highlight> highlights = new ArrayList<>();
 
     private final List<Move> moves = new ArrayList<>();
 
@@ -74,10 +77,18 @@ public class BoardHandler {
         this.boardListener = boardListener;
     }
 
+    public List<Highlight> getHighlights() {
+        return highlights;
+    }
+
     /**
      * ensures only active player can select a piece and only pieces that belong to the current player can be selected
      */
     public void onActionDown(final float touchX, final float touchY) {
+
+        highlights.clear();
+        //trigger with empty list to clear the previous highlights
+        boardListener.onHighlightsAdded(highlights);
 
         //checks if the current user is not the active player
         if(!activePlayerId.equals(myPlayerId)) return;
@@ -126,16 +137,47 @@ public class BoardHandler {
      */
     private void handlePieceSelection(final Piece piece) {
 
+        if(checkersBoard.getCaptureRule().isForceCapture() &&
+                checkersBoard.isTherePossibleCaptures(piece.getPlayerId()) &&
+                !checkersBoard.canPieceCapture(piece)) {
+
+            highlights.addAll(buildHighlights(checkersBoard.findPiecesWithPossibleCapturesByPlayerId(piece.getPlayerId())));
+
+            //now trigger with the new list of highlights
+            boardListener.onHighlightsAdded(highlights);
+
+            return;
+        }
+
         if (touchedPiece != null) {
-            touchedPiece.setHighlighted(false);
+            touchedPiece.setSelected(false);
             if(touchedPiece.isInCaptureChain() && checkersBoard.getCaptureRule().isForceCapture()) return;
         }
 
         touchedPiece = piece;
-        piece.setHighlighted(true);
+        piece.setSelected(true);
 
         addLandingSpots(piece, piece.getRow(), piece.getCol());
 
+    }
+
+    private List<Highlight> buildHighlights(final List<Piece> pieces) {
+        final List<Highlight> highlights = new ArrayList<>();
+        for(Piece piece : pieces) {
+            highlights.add(buildHighlight(piece.getCenterX(), piece.getCenterY(), piece.getRow(), piece.getCol()));
+        }
+        return highlights;
+    }
+
+    private Highlight buildHighlight(final float centerX, final float centerY, final int row, final int col) {
+
+        final Highlight highlight = new Highlight();
+        highlight.setRow(row);
+        highlight.setCol(col);
+        highlight.setCenterX(centerX);
+        highlight.setCenterY(centerY);
+
+        return highlight;
     }
 
     /**
@@ -182,7 +224,7 @@ public class BoardHandler {
      * terminates a move when there can no longer be any more moves
      */
     private void endMove() {
-        touchedPiece.setHighlighted(false);
+        touchedPiece.setSelected(false);
         capturing = false;
 
         for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners) {

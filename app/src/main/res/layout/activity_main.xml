@@ -8,10 +8,12 @@
     tools:context=".MainActivity">
 
     <RelativeLayout
+        android:id="@+id/boardLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_gravity="center"
+        android:visibility="invisible"
         >
 
         <TextView
@@ -86,6 +88,123 @@
 
 
     </RelativeLayout>
+
+
+    <LinearLayout
+        android:id="@+id/ruleLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="visible"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Capture Rule"
+                android:textSize="17sp"
+
+                android:textStyle="bold"
+                />
+
+            <CheckBox
+                android:id="@+id/forceCapture"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Force Capture"
+                android:checked="true"
+                />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="NormalPiece Rule"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                />
+
+            <CheckBox
+                android:id="@+id/captureBackwards"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Capture Backwards"
+                android:checked="true"
+                />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"
+
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="king Piece Rule"
+                android:textStyle="bold"
+                android:textSize="17sp"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Max normal steps"
+                android:layout_marginTop="8dp"
+                />
+
+            <EditText
+                android:id="@+id/inputMaxNormalSteps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Max normal steps( 0 == infinity)"
+                android:text="0"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Max steps after capture"
+                android:layout_marginTop="8dp"
+                />
+
+            <EditText
+                android:id="@+id/inputMaxStepsAfterCapture"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Max steps after capture ( 0 == infinity)"
+                android:text="0"
+                />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnStartGame"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Start Game"
+            android:textAllCaps="false"
+            android:layout_marginTop="8dp"
+            />
+
+    </LinearLayout>
 
 
 </FrameLayout>

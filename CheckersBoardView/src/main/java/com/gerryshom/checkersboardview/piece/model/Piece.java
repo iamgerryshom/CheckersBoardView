@@ -11,11 +11,11 @@ public class Piece {
     private transient boolean king;
     private transient float centerX;
     private transient float centerY;
-    private transient boolean highlighted;
+    private transient boolean selected;
     private String color;
     private boolean inCaptureChain;
 
-    public Piece(String id, int row, int col, String playerId, Player player, boolean king, float centerX, float centerY, boolean highlighted, String color, boolean inCaptureChain) {
+    public Piece(String id, int row, int col, String playerId, Player player, boolean king, float centerX, float centerY, boolean selected, String color, boolean inCaptureChain) {
         this.id = id;
         this.row = row;
         this.col = col;
@@ -24,7 +24,7 @@ public class Piece {
         this.king = king;
         this.centerX = centerX;
         this.centerY = centerY;
-        this.highlighted = highlighted;
+        this.selected = selected;
         this.color = color;
         this.inCaptureChain = inCaptureChain;
     }
@@ -39,10 +39,18 @@ public class Piece {
                 king,
                 centerX,
                 centerY,
-                highlighted,
+                selected,
                 color,
                 inCaptureChain
         );
+    }
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
     public Piece() {}
@@ -61,14 +69,6 @@ public class Piece {
 
     public void setColor(String color) {
         this.color = color;
-    }
-
-    public boolean isHighlighted() {
-        return highlighted;
-    }
-
-    public void setHighlighted(boolean highlighted) {
-        this.highlighted = highlighted;
     }
 
     public float getCenterX() {
