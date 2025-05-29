@@ -1,6 +1,11 @@
 package com.gerryshom.checkersboardview.rules.model;
 
 public class CaptureRule {
+
+
+    public CaptureRule() {
+    }
+
     public CaptureRule(boolean forceCapture, boolean allowMultiCapture, boolean mustTakeLongestJumpPath) {
         this.forceCapture = forceCapture;
         this.allowMultiCapture = allowMultiCapture;

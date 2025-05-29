@@ -4,6 +4,9 @@ public class GameFlowRule {
     private int maxTurnsWithoutCapture;
     private long maxTurnDurationSeconds;
 
+    public GameFlowRule() {
+    }
+
     public GameFlowRule(int maxTurnsWithoutCapture, long maxTurnDurationSeconds) {
         this.maxTurnsWithoutCapture = maxTurnsWithoutCapture;
         this.maxTurnDurationSeconds = maxTurnDurationSeconds;

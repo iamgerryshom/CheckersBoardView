@@ -36,6 +36,8 @@ public class CheckersBoard {
     private CaptureRule captureRule = DefaultRule.captureRule();
     private GameFlowRule gameFlowRule = DefaultRule.gameFlowRule();
 
+
+
     public CheckersBoard(String id, List<Piece> pieces, String creatorId, String opponentId, long createdAt, String activePlayerId, Player creator, Player opponent, int boardWidth, NormalPieceRule normalPieceRule, KingPieceRule kingPieceRule, CaptureRule captureRule, GameFlowRule gameFlowRule) {
         this.id = id;
         this.pieces = pieces;

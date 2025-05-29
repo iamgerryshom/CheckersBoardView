@@ -6,6 +6,9 @@ public class Highlight {
     private float centerX;
     private float centerY;
 
+    public Highlight() {
+    }
+
     public float getCenterX() {
         return centerX;
     }

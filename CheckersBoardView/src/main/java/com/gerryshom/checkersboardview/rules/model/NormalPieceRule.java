@@ -5,6 +5,9 @@ public class NormalPieceRule {
     private boolean allowBackwardCapture;
     private boolean promoteOnlyAtLastRow;
 
+    public NormalPieceRule() {
+    }
+
     public NormalPieceRule(boolean restrictToForwardMovement, boolean allowBackwardCapture, boolean promoteOnlyAtLastRow) {
         this.restrictToForwardMovement = restrictToForwardMovement;
         this.allowBackwardCapture = allowBackwardCapture;

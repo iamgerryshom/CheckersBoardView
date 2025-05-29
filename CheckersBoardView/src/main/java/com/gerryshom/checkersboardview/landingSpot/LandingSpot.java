@@ -13,6 +13,9 @@ public class LandingSpot {
         this.afterJump = afterJump;
     }
 
+    public LandingSpot() {
+    }
+
     public void setRowCol(Point rowCol) {
         this.rowCol = rowCol;
     }
