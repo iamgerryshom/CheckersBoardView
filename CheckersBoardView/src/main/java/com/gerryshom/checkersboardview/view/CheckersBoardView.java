@@ -120,7 +120,7 @@ public class CheckersBoardView extends View {
         setRotation(
                 checkersBoard.getCreatorId().equals(boardHandler.getMyPlayerId())
                         ? 0
-                        : 90
+                        : 180
         );
 
         getDimensions((width, height)->{
