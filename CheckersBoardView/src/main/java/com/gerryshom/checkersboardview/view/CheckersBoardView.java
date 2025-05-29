@@ -116,6 +116,13 @@ public class CheckersBoardView extends View {
     }
 
     public void setup(final CheckersBoard checkersBoard) {
+
+        setRotation(
+                checkersBoard.getCreatorId().equals(boardHandler.getMyPlayerId())
+                        ? 0
+                        : 90
+        );
+
         getDimensions((width, height)->{
             checkersBoard.setBoardWidth((int) width);
             boardHandler.setup(checkersBoard);
