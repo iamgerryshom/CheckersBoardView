@@ -70,6 +70,7 @@ public class BoardHandler {
     }
 
     public void setup(final CheckersBoard checkersBoard) {
+
         setCheckersBoard(checkersBoard);
     }
 
@@ -486,6 +487,19 @@ public class BoardHandler {
      * Called when a checkers board for a live match is created
      */
     private void setCheckersBoard(final CheckersBoard checkersBoard) {
+
+        if(checkersBoard.getCreatorId() == null)
+            throw new RuntimeException("creatorId cannot be null");
+
+        if(checkersBoard.getOpponent() == null)
+            throw new RuntimeException("opponentId cannot be null");
+
+        if(checkersBoard.getActivePlayerId() == null)
+            throw new RuntimeException("activePlayerId cannot be null");
+
+        if (!checkersBoard.getCreatorId().equals(checkersBoard.getActivePlayerId())
+                && !checkersBoard.getOpponent().equals(checkersBoard.getActivePlayerId()))
+            throw new RuntimeException("activePlayerId must be the id of one of the players");
 
         this.checkersBoard = checkersBoard;
 
