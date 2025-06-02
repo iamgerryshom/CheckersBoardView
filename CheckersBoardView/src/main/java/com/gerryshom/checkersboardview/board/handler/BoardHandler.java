@@ -503,10 +503,10 @@ public class BoardHandler {
 
         this.checkersBoard = checkersBoard;
 
-        checkersBoard.setKingPieceRule(DefaultRule.kingPieceRule());
-        checkersBoard.setNormalPieceRule(DefaultRule.normalPieceRule());
-        checkersBoard.setCaptureRule(DefaultRule.captureRule());
-        checkersBoard.setGameFlowRule(DefaultRule.gameFlowRule());
+        checkersBoard.setKingPieceRule(checkersBoard.getKingPieceRule() == null ? DefaultRule.kingPieceRule() : checkersBoard.getKingPieceRule());
+        checkersBoard.setNormalPieceRule(checkersBoard.getNormalPieceRule() == null ? DefaultRule.normalPieceRule() : checkersBoard.getNormalPieceRule());
+        checkersBoard.setCaptureRule(checkersBoard.getCaptureRule() == null ? DefaultRule.captureRule() : checkersBoard.getCaptureRule());
+        checkersBoard.setGameFlowRule(checkersBoard.getGameFlowRule() == null ? DefaultRule.gameFlowRule() : checkersBoard.getGameFlowRule());
 
         switchPlayers(checkersBoard.getActivePlayerId());
 
