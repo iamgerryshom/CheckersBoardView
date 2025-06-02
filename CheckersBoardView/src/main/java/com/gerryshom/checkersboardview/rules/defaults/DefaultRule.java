@@ -34,7 +34,8 @@ public class DefaultRule {
         return new NormalPieceRule(
                 true,
                 false,
-                true
+                true,
+                false
         );
     }
 }

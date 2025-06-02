@@ -4,14 +4,25 @@ public class NormalPieceRule {
     private boolean restrictToForwardMovement;
     private boolean allowBackwardCapture;
     private boolean promoteOnlyAtLastRow;
+    private boolean kingDuringCaptureChain;
 
     public NormalPieceRule() {
     }
 
-    public NormalPieceRule(boolean restrictToForwardMovement, boolean allowBackwardCapture, boolean promoteOnlyAtLastRow) {
+    public NormalPieceRule(boolean restrictToForwardMovement, boolean allowBackwardCapture, boolean promoteOnlyAtLastRow, boolean kingDuringCaptureChain) {
         this.restrictToForwardMovement = restrictToForwardMovement;
         this.allowBackwardCapture = allowBackwardCapture;
         this.promoteOnlyAtLastRow = promoteOnlyAtLastRow;
+        this.kingDuringCaptureChain = kingDuringCaptureChain;
+    }
+
+
+    public boolean isKingDuringCaptureChain() {
+        return kingDuringCaptureChain;
+    }
+
+    public void setKingDuringCaptureChain(boolean kingDuringCaptureChain) {
+        this.kingDuringCaptureChain = kingDuringCaptureChain;
     }
 
     public boolean isRestrictToForwardMovement() {

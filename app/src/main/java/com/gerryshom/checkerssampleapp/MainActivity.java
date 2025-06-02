@@ -129,8 +129,10 @@ public class MainActivity extends AppCompatActivity {
         normalPieceRule = new NormalPieceRule(
                 true, //restrictToForwardMovement
                 true, //allowBackwardCapture
-                true //promoteOnlyAtLastRow
+                true, //promoteOnlyAtLastRow
+                false //kingDuringMultiCapture
         );
+
     }
 
     private void reset() {
