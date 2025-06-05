@@ -12,6 +12,12 @@ public class Player {
     public Player() {
     }
 
+    public Player clone() {
+        return new Player(
+                id, name
+        );
+    }
+
     public static Player human() {
         return new Player("Human", "Human");
     }

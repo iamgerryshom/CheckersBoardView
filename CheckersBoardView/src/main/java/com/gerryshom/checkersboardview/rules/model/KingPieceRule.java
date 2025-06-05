@@ -16,6 +16,15 @@ public class KingPieceRule {
         this.canMoveImmediatelyAfterPromotion = canMoveImmediatelyAfterPromotion;
     }
 
+    public KingPieceRule clone() {
+        return new KingPieceRule(
+                maxMoveSteps,
+                maxLandingDistanceAfterCapture,
+                canChangeDirectionDuringMultiJump,
+                canMoveImmediatelyAfterPromotion
+        );
+    }
+
     public int getMaxMoveSteps() {
         return maxMoveSteps;
     }

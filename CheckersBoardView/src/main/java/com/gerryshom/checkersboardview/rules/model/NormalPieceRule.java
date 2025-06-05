@@ -16,6 +16,15 @@ public class NormalPieceRule {
         this.kingDuringCaptureChain = kingDuringCaptureChain;
     }
 
+    public NormalPieceRule clone() {
+        return new NormalPieceRule(
+                restrictToForwardMovement,
+                allowBackwardCapture,
+                promoteOnlyAtLastRow,
+                kingDuringCaptureChain
+        );
+    }
+
 
     public boolean isKingDuringCaptureChain() {
         return kingDuringCaptureChain;

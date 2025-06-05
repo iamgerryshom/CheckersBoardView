@@ -12,6 +12,12 @@ public class GameFlowRule {
         this.maxTurnDurationSeconds = maxTurnDurationSeconds;
     }
 
+    public GameFlowRule clone() {
+        return new GameFlowRule(
+                maxTurnsWithoutCapture, maxTurnDurationSeconds
+        );
+    }
+
     public int getMaxTurnsWithoutCapture() {
         return maxTurnsWithoutCapture;
     }

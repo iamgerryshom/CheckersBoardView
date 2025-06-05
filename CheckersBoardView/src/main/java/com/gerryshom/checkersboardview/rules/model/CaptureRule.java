@@ -12,6 +12,14 @@ public class CaptureRule {
         this.mustTakeLongestJumpPath = mustTakeLongestJumpPath;
     }
 
+    public CaptureRule clone() {
+        return new CaptureRule(
+                forceCapture,
+                allowMultiCapture,
+                mustTakeLongestJumpPath
+        );
+    }
+
     private boolean forceCapture;
     private boolean allowMultiCapture;
     private boolean mustTakeLongestJumpPath;

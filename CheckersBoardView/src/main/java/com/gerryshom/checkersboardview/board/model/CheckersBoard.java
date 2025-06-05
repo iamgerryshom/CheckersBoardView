@@ -24,8 +24,6 @@ import java.util.UUID;
 public class CheckersBoard {
     private String id;
     private List<Piece> pieces;
-    private String creatorId;
-    private String opponentId;
     private long createdAt;
     private String activePlayerId;
     private Player creator;
@@ -37,12 +35,9 @@ public class CheckersBoard {
     private GameFlowRule gameFlowRule = DefaultRule.gameFlowRule();
 
 
-
-    public CheckersBoard(String id, List<Piece> pieces, String creatorId, String opponentId, long createdAt, String activePlayerId, Player creator, Player opponent, int boardWidth, NormalPieceRule normalPieceRule, KingPieceRule kingPieceRule, CaptureRule captureRule, GameFlowRule gameFlowRule) {
+    public CheckersBoard(String id, List<Piece> pieces, long createdAt, String activePlayerId, Player creator, Player opponent, int boardWidth, NormalPieceRule normalPieceRule, KingPieceRule kingPieceRule, CaptureRule captureRule, GameFlowRule gameFlowRule) {
         this.id = id;
         this.pieces = pieces;
-        this.creatorId = creatorId;
-        this.opponentId = opponentId;
         this.createdAt = createdAt;
         this.activePlayerId = activePlayerId;
         this.creator = creator;
@@ -56,8 +51,8 @@ public class CheckersBoard {
 
     public CheckersBoard deepClone() {
         return new CheckersBoard(
-                id, clonePieces(pieces), creatorId, opponentId, createdAt, activePlayerId, creator, opponent, boardWidth, normalPieceRule, kingPieceRule,
-                captureRule, gameFlowRule
+                id, clonePieces(pieces), createdAt, activePlayerId, creator.clone(), opponent.clone(), boardWidth, normalPieceRule.clone(), kingPieceRule.clone(),
+                captureRule.clone(), gameFlowRule.clone()
         );
     }
 
@@ -98,9 +93,9 @@ public class CheckersBoard {
      */
     public String identifyOpponentPlayerId(final String playerId) {
         if(playerId == null ) throw new RuntimeException("playerId is null");
-        return playerId.equals(creatorId)
-                ? opponentId
-                : creatorId;
+        return playerId.equals(creator.getId())
+                ? opponent.getId()
+                : creator.getId();
     }
 
     /**
@@ -197,7 +192,7 @@ public class CheckersBoard {
         return findLandingSpots(p, row, col,
                 p.isKing() || !normalPieceRule.isRestrictToForwardMovement()
                         ? Arrays.asList(Direction.TOP_LEFT, Direction.TOP_RIGHT, Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT)
-                        : p.getPlayerId().equals(creatorId)
+                        : p.getPlayerId().equals(creator.getId())
                         ? Arrays.asList(Direction.TOP_LEFT, Direction.TOP_RIGHT)
                         : Arrays.asList(Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT),
                 normalPieceRule.isAllowBackwardCapture(),
@@ -534,19 +529,18 @@ public class CheckersBoard {
     /**
      * prepares the board for a local match
      * @param activePlayerId the player who will start the game
-     * @param myPlayerId the player who created the board
      */
     public static CheckersBoard createCheckersBoard(@NonNull final String activePlayerId,
-                                             @NonNull final String myPlayerId,
-                                             @NonNull final String opponentPlayerId) {
+                                             @NonNull final Player myPlayer,
+                                             @NonNull final Player opponentPlayer) {
 
         final CheckersBoard checkersBoard = new CheckersBoard();
 
-        checkersBoard.setCreatorId(myPlayerId);
+        checkersBoard.setCreator(myPlayer);
         checkersBoard.setActivePlayerId(activePlayerId);
-        checkersBoard.setOpponentId(opponentPlayerId);
+        checkersBoard.setOpponent(opponentPlayer);
 
-        checkersBoard.setPieces(createPieces(myPlayerId, opponentPlayerId));
+        checkersBoard.setPieces(createPieces(myPlayer.getId(), opponentPlayer.getId()));
 
         return checkersBoard;
 
@@ -622,22 +616,6 @@ public class CheckersBoard {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getCreatorId() {
-        return creatorId;
-    }
-
-    public void setCreatorId(String creatorId) {
-        this.creatorId = creatorId;
-    }
-
-    public String getOpponentId() {
-        return opponentId;
-    }
-
-    public void setOpponentId(String opponentId) {
-        this.opponentId = opponentId;
     }
 
     public List<Piece> getPieces() {

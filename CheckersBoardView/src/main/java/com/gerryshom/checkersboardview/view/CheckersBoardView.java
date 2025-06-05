@@ -18,20 +18,22 @@ import androidx.core.content.ContextCompat;
 
 import com.gerryshom.checkersboardview.R;
 import com.gerryshom.checkersboardview.board.handler.BoardHandler;
-import com.gerryshom.checkersboardview.board.listener.BoardListener;
 import com.gerryshom.checkersboardview.board.model.CheckersBoard;
 import com.gerryshom.checkersboardview.highlights.Highlight;
-import com.gerryshom.checkersboardview.movement.model.Move;
+import com.gerryshom.checkersboardview.listener.move.MoveSequenceListener;
+import com.gerryshom.checkersboardview.listener.capture.PieceCapturedListener;
+import com.gerryshom.checkersboardview.listener.playerswitch.PlayerSwitchedListener;
+import com.gerryshom.checkersboardview.listener.win.WinListener;
 import com.gerryshom.checkersboardview.movement.model.MoveSequence;
 import com.gerryshom.checkersboardview.paint.DefaultPaint;
 import com.gerryshom.checkersboardview.piece.model.Piece;
 import com.gerryshom.checkersboardview.landingSpot.LandingSpot;
+import com.gerryshom.checkersboardview.player.Player;
 import com.gerryshom.checkersboardview.rules.model.CaptureRule;
 import com.gerryshom.checkersboardview.rules.model.GameFlowRule;
 import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
 import com.gerryshom.checkersboardview.rules.model.NormalPieceRule;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -99,26 +101,41 @@ public class CheckersBoardView extends View {
 
     }
 
-    public CheckersBoardView setMyPlayerId(final String myPlayerId) {
-        boardHandler.setMyPlayerId(myPlayerId);
+    public CheckersBoardView setLocalPlayer(final Player localPlayer) {
+        boardHandler.setLocalPlayer(localPlayer);
         return this;
     }
 
-    public CheckersBoardView addBoardListener(final BoardListener gameListener) {
-        boardHandler.addListener(gameListener);
+    public CheckersBoardView addMoveSequenceListener(final MoveSequenceListener moveSequenceListener) {
+        boardHandler.addMoveSequenceListener(moveSequenceListener);
         return this;
     }
 
-    public void setup(final String activePlayerId, final String opponentPlayerId) {
+    public CheckersBoardView addPieceCapturedListener(final PieceCapturedListener pieceCapturedListener) {
+        boardHandler.addPieceCapturedListener(pieceCapturedListener);
+        return this;
+    }
+
+    public CheckersBoardView addPlayerSwitchedListener(final PlayerSwitchedListener playerSwitchedListener) {
+        boardHandler.addPlayerSwitchedListener(playerSwitchedListener);
+        return this;
+    }
+
+    public CheckersBoardView addWinListener(final WinListener winListener) {
+        boardHandler.addWinListener(winListener);
+        return this;
+    }
+
+    public void setup(final String activePlayerId, final Player opponentPlayer) {
         getDimensions((width, height)->{
-            boardHandler.setup((int) width, activePlayerId, opponentPlayerId);
+            boardHandler.setup((int) width, activePlayerId, opponentPlayer);
         });
     }
 
     public void setup(final CheckersBoard checkersBoard) {
 
         setRotation(
-                checkersBoard.getCreatorId().equals(boardHandler.getMyPlayerId())
+                checkersBoard.getCreator().getId().equals(boardHandler.getLocalPlayer())
                         ? 0
                         : 180
         );
@@ -183,7 +200,7 @@ public class CheckersBoardView extends View {
         getDimensions((width, height)->{
             checkersBoard.setBoardWidth((int) width);
 
-                if(boardHandler.getMyPlayerId().equals(checkersBoard.getCreatorId())) {
+                if(boardHandler.getLocalPlayer().equals(checkersBoard.getCreator().getId())) {
                     setRotation(0);
                 } else {
                     setRotation(180); // rotates the board so that the player at the top can play as if they are at the bottom. This makes it easier to play instead of rotating the whole device/

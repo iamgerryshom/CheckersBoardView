@@ -42,63 +42,54 @@ public class MainActivity extends AppCompatActivity {
          * Use inbuilt computer playerId if playing with computer
          * or real humanId if playing with another human
          */
-        final String opponentPlayerId = Player.computer().getId(); //Inbuilt computer id,
-        final String humanPlayerId = "Human"; // your human playerId
+        final Player opponentPlayer = Player.computer(); //Inbuilt computer id,
 
-        binding.checkersBoardView.setMyPlayerId(humanPlayerId)
-                .addBoardListener(new BoardListener() {
-                    @Override
-                    public void onPieceCompletedMoveSequence(MoveSequence moveSequence) {
-                        /**
-                         * Triggered as soon as a player's piece lands
-                         * in the final tile
-                         *
-                         * moveSequence has a list of all moves that were made
-                         */
-                    }
+        final Player humanPlayer = new Player("Human", "Human");
 
-                    @Override
-                    public void onActivePlayerSwitched(String newActivePlayerId) {
-                        /**
-                         * Triggered as soon as a player makes a complete moveSequence and
-                         * active player is switched to opponent
-                         */
-                        binding.tvActivePlayer.setText(
-                                newActivePlayerId.equals(Player.computer().getId()) ? "Computer's turn" : "Your turn"
-                        );
-                    }
+        binding.checkersBoardView.setLocalPlayer(humanPlayer)
+                .addMoveSequenceListener(moveSequence ->{
+                    /**
+                     * Triggered as soon as a player's piece lands
+                     * in the final tile
+                     *
+                     * moveSequence has a list of all moves that were made
+                     */
+                }).addPlayerSwitchedListener(newActivePlayer -> {
 
-                    @Override
-                    public void onWin(String winnerPlayerId) {
-                        /**
-                         * Triggered as soon as you or the opponent cannot make any more moves
-                         */
-                        binding.tvActivePlayer.setText(
-                                winnerPlayerId.equals(Player.computer().getId()) ? "Computer Won" : "You turn"
-                        );
-                    }
-                    @Override
-                    public void onPieceCaptured(String capturedPiecePlayerId, int remainingPieceCount) {
-                        /**
-                         * Triggered as soon as a piece is jumped either in a single capture or a captured chain
-                         */
-                        if(capturedPiecePlayerId.equals(Player.computer().getId())) {
-                            binding.tvOpponentPieceCount.setText("Computer : " + remainingPieceCount);
-                        } else {
-                            binding.tvMyPlayerPieceCount.setText("You : " + remainingPieceCount);
-                        }
+                    /**
+                     * Triggered as soon as a player makes a complete moveSequence and
+                     * active player is switched to opponent
+                     */
+                    binding.tvActivePlayer.setText(
+                            newActivePlayer.getId().equals(Player.computer().getId()) ? "Computer's turn" : "Your turn"
+                    );
+
+                }).addWinListener(winnerPlayer -> {
+                    /**
+                     * Triggered as soon as you or the opponent cannot make any more moves
+                     */
+                    binding.tvActivePlayer.setText(
+                            winnerPlayer.getId().equals(Player.computer().getId()) ? "Computer Won" : "You turn"
+                    );
+                }).addPieceCapturedListener((capturedPiecePlayerId, remainingPieceCount)->{
+                    /**
+                     * Triggered as soon as a piece is jumped either in a single capture or a captured chain
+                     */
+                    if(capturedPiecePlayerId.equals(Player.computer().getId())) {
+                        binding.tvOpponentPieceCount.setText("Computer : " + remainingPieceCount);
+                    } else {
+                        binding.tvMyPlayerPieceCount.setText("You : " + remainingPieceCount);
                     }
                 })
                 /**
                  * best used for for multiplayer games where you need them to share the same board with exactly the same data
                  */
                 //.setup(checkersBoard)
-
                 /**
                  * best used for single device player game
                  * playing with opponent on the same device eg playing with computer
                  */
-                .setup(humanPlayerId, opponentPlayerId);
+                .setup(humanPlayer.getId(), opponentPlayer);
 
     }
 

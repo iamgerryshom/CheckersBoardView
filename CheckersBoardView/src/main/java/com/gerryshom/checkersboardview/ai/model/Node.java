@@ -379,7 +379,7 @@ public class Node {
 
             if(!piece.isKing()) {
                 piece.setKing(
-                        checkersBoard.crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow())
+                        checkersBoard.crownKing(checkersBoard.getCreator().getId(), piece.getPlayerId(), move.getToRow())
                 );
             }
 

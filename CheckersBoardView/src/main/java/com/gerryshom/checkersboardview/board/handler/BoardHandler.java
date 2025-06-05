@@ -7,10 +7,13 @@ import android.os.Handler;
 import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.gerryshom.checkersboardview.ai.algorithm.MiniMax;
-import com.gerryshom.checkersboardview.board.listener.BoardListener;
 import com.gerryshom.checkersboardview.board.model.CheckersBoard;
 import com.gerryshom.checkersboardview.highlights.Highlight;
 import com.gerryshom.checkersboardview.landingSpot.LandingSpot;
+import com.gerryshom.checkersboardview.listener.move.MoveSequenceListener;
+import com.gerryshom.checkersboardview.listener.capture.PieceCapturedListener;
+import com.gerryshom.checkersboardview.listener.playerswitch.PlayerSwitchedListener;
+import com.gerryshom.checkersboardview.listener.win.WinListener;
 import com.gerryshom.checkersboardview.movement.model.Move;
 import com.gerryshom.checkersboardview.movement.model.MoveSequence;
 import com.gerryshom.checkersboardview.piece.model.Piece;
@@ -22,7 +25,6 @@ import com.gerryshom.checkersboardview.rules.model.KingPieceRule;
 import com.gerryshom.checkersboardview.rules.model.NormalPieceRule;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,10 +38,14 @@ public class BoardHandler {
 
     private final List<Move> moves = new ArrayList<>();
 
-    private List<com.gerryshom.checkersboardview.board.listener.BoardListener> listeners = new ArrayList<>();
+    private final List<MoveSequenceListener> moveSequenceListeners = new ArrayList<>();
+    private final List<PieceCapturedListener> pieceCapturedListeners = new ArrayList<>();
+    private final List<PlayerSwitchedListener> playerSwitchedListeners = new ArrayList<>();
+    private final List<WinListener> winListeners = new ArrayList<>();
 
-    private String myPlayerId;
-    private String remotePlayerId;
+    private Player localPlayer;
+    private Player opponentPlayer;
+
     private String activePlayerId;
 
     private Piece touchedPiece;
@@ -50,23 +56,26 @@ public class BoardHandler {
 
     public BoardHandler(CheckersBoard checkersBoard) {
         this.checkersBoard = checkersBoard;
-        listeners.add(new com.gerryshom.checkersboardview.board.listener.BoardListener() {}); // helps to avoid null pointer exception
     }
 
     public void reset() {
         if(checkersBoard == null)
             throw new RuntimeException("No CheckersBoard had been setup");
-        setup(checkersBoard.getBoardWidth(), activePlayerId, remotePlayerId);
+        setup(checkersBoard.getBoardWidth(), activePlayerId, opponentPlayer);
     }
 
-    public void setup(final int boardWidth, final String activePlayerId, final String opponentPlayerId) {
-        final CheckersBoard checkersBoard = CheckersBoard.createCheckersBoard(activePlayerId, myPlayerId, opponentPlayerId);
+    public void setup(final int boardWidth, final String activePlayerId, final Player opponentPlayer) {
+        final CheckersBoard checkersBoard = CheckersBoard.createCheckersBoard(activePlayerId, localPlayer, opponentPlayer);
         checkersBoard.setBoardWidth(boardWidth);
         setCheckersBoard(checkersBoard);
     }
 
-    public String getMyPlayerId() {
-        return myPlayerId;
+    public Player getLocalPlayer() {
+        return localPlayer;
+    }
+
+    public Player getOpponentPlayer() {
+        return opponentPlayer;
     }
 
     public void setup(final CheckersBoard checkersBoard) {
@@ -92,7 +101,7 @@ public class BoardHandler {
         boardListener.onHighlightsAdded(highlights);
 
         //checks if the current user is not the active player
-        if(!activePlayerId.equals(myPlayerId)) return;
+        if(!activePlayerId.equals(localPlayer.getId())) return;
 
         final Piece piece = checkersBoard.findTouchedPieceByTouchXAndY(touchX, touchY);
 
@@ -100,7 +109,7 @@ public class BoardHandler {
             handleMove(touchX, touchY);
         } else {
             //checks if the piece does not belong to the current player
-            if(!piece.getPlayerId().equals(myPlayerId)) return;
+            if(!piece.getPlayerId().equals(localPlayer.getId())) return;
             handlePieceSelection(piece);
         }
 
@@ -200,8 +209,11 @@ public class BoardHandler {
             final Piece capturedPiece = checkersBoard.findPieceById(move.getCapturedPieceId());
             checkersBoard.getPieces().remove(capturedPiece);
 
-            for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners)
-                listener.onPieceCaptured(capturedPiece.getPlayerId(), checkersBoard.getPieceCountByPlayerId(capturedPiece.getPlayerId()));
+            if(!pieceCapturedListeners.isEmpty()) {
+                for(PieceCapturedListener pieceCapturedListener : pieceCapturedListeners) {
+                    pieceCapturedListener.onPieceCaptured(capturedPiece.getPlayerId(), checkersBoard.getPieceCountByPlayerId(capturedPiece.getPlayerId()));
+                }
+            }
 
             // Always find possible captures at the new spot
             possibleCaptures.addAll(checkersBoard.findCapturesByRowAndCol(touchedPiece, move.getToRow(), move.getToCol()));
@@ -228,11 +240,13 @@ public class BoardHandler {
         touchedPiece.setSelected(false);
         capturing = false;
 
-        for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners) {
-            listener.onPieceCompletedMoveSequence(new MoveSequence(remotePlayerId, moves));
+        if(!moveSequenceListeners.isEmpty()) {
+            for(MoveSequenceListener moveSequenceListener : moveSequenceListeners) {
+                moveSequenceListener.onPieceCompletedMoveSequence(new MoveSequence(opponentPlayer.getId(), moves));
+            }
         }
 
-        if(checkersBoard.getOpponentId().equals(Player.computer().getId())) {
+        if(checkersBoard.getOpponent().getId().equals(Player.computer().getId())) {
             new Handler().postDelayed(()->{
 
                 MiniMax.searchOptimalMoveSequence(checkersBoard, 5, new MiniMax.SearchListener() {
@@ -250,7 +264,7 @@ public class BoardHandler {
         touchedPiece = null;
         landingSpots.clear();
 
-        switchPlayers(remotePlayerId);
+        switchPlayers(opponentPlayer.getId());
 
     }
 
@@ -278,8 +292,7 @@ public class BoardHandler {
         if(piece == null || move == null) return;
 
         if(!piece.isKing() && isFinalMove)
-            piece.setKing(checkersBoard.crownKing(checkersBoard.getCreatorId(), piece.getPlayerId(), move.getToRow()));
-
+            piece.setKing(checkersBoard.crownKing(checkersBoard.getCreator().getId(), piece.getPlayerId(), move.getToRow()));
 
         //uses animation to move piece to new position
         animatePieceMovement(piece, move.getToCenterX(), move.getToCenterY(), ()->{
@@ -290,9 +303,24 @@ public class BoardHandler {
                 switchPlayers(opponentPlayerId);
             }
 
-            if(checkersBoard.findMoveablePiecesByPlayerId(opponentPlayerId).isEmpty())
-                for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners)
-                    listener.onWin(piece.getPlayerId());
+            if(checkersBoard.findMoveablePiecesByPlayerId(opponentPlayerId).isEmpty()) {
+
+                final Player myPlayer = checkersBoard.getCreator().getId().equals(localPlayer.getId())
+                        ? checkersBoard.getCreator() : checkersBoard.getOpponent();
+
+                final Player opponentPlayer = checkersBoard.getCreator().getId().equals(myPlayer.getId())
+                        ? checkersBoard.getOpponent() : checkersBoard.getCreator();
+
+                if(!winListeners.isEmpty()) {
+                    for(WinListener winListener : winListeners) {
+                        final Player winnerPlayer = piece.getPlayerId().equals(myPlayer.getId())
+                                ? myPlayer : opponentPlayer;
+
+                        winListener.onWin(winnerPlayer);
+                    }
+                }
+
+            }
 
             animationListener.onAnimationEnd();
 
@@ -338,8 +366,11 @@ public class BoardHandler {
             final Piece capturedPiece = checkersBoard.findPieceById(move.getCapturedPieceId());
             checkersBoard.getPieces().remove(capturedPiece);
 
-            for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners)
-                listener.onPieceCaptured(capturedPiece.getPlayerId(), checkersBoard.getPieceCountByPlayerId(capturedPiece.getPlayerId()));
+            if(!pieceCapturedListeners.isEmpty()) {
+                for(PieceCapturedListener pieceCapturedListener : pieceCapturedListeners) {
+                    pieceCapturedListener.onPieceCaptured(capturedPiece.getPlayerId(), checkersBoard.getPieceCountByPlayerId(capturedPiece.getPlayerId()));
+                }
+            }
 
         }
 
@@ -466,10 +497,9 @@ public class BoardHandler {
 
     /**
      * sets the id of the player created the board
-     * @param myPlayerId the player id
      */
-    public void setMyPlayerId(final String myPlayerId) {
-        this.myPlayerId = myPlayerId;
+    public void setLocalPlayer(final Player localPlayer) {
+        this.localPlayer = localPlayer;
     }
 
     /**
@@ -478,9 +508,22 @@ public class BoardHandler {
      */
     private void switchPlayers(final String activePlayerId) {
         this.activePlayerId = activePlayerId;
-        for(com.gerryshom.checkersboardview.board.listener.BoardListener listener : listeners) {
-            listener.onActivePlayerSwitched(activePlayerId);
+
+        final Player myPlayer = checkersBoard.getCreator().getId().equals(localPlayer.getId())
+                ? checkersBoard.getCreator() : checkersBoard.getOpponent();
+
+        final Player opponentPlayer = checkersBoard.getCreator().getId().equals(myPlayer.getId())
+                ? checkersBoard.getOpponent() : checkersBoard.getCreator();
+
+        final Player activePlayer = activePlayerId.equals(myPlayer.getId())
+                ? myPlayer : opponentPlayer;
+
+        if(!playerSwitchedListeners.isEmpty()) {
+            for(PlayerSwitchedListener playerSwitchedListener : playerSwitchedListeners) {
+                playerSwitchedListener.onActivePlayerSwitched(activePlayer);
+            }
         }
+
     }
 
     /**
@@ -488,18 +531,21 @@ public class BoardHandler {
      */
     private void setCheckersBoard(final CheckersBoard checkersBoard) {
 
-        if(checkersBoard.getCreatorId() == null)
-            throw new RuntimeException("creatorId cannot be null");
+        if(checkersBoard.getCreator() == null)
+            throw new RuntimeException("creatorPlayer cannot be null");
 
         if(checkersBoard.getOpponent() == null)
-            throw new RuntimeException("opponentId cannot be null");
+            throw new RuntimeException("opponentPlayer cannot be null");
+
+        if(localPlayer == null)
+            throw new RuntimeException("localPlayer cannot be null");
 
         if(checkersBoard.getActivePlayerId() == null)
             throw new RuntimeException("activePlayerId cannot be null");
 
-        if (!checkersBoard.getCreatorId().equals(checkersBoard.getActivePlayerId())
+        if (!checkersBoard.getCreator().getId().equals(checkersBoard.getActivePlayerId())
                 && !checkersBoard.getOpponent().equals(checkersBoard.getActivePlayerId()))
-            throw new RuntimeException("activePlayerId must be the id of one of the players");
+            throw new RuntimeException("activePlayerId must be the id either players");
 
         this.checkersBoard = checkersBoard;
 
@@ -510,10 +556,10 @@ public class BoardHandler {
 
         switchPlayers(checkersBoard.getActivePlayerId());
 
-        if(myPlayerId.equals(checkersBoard.getCreatorId())) {
-            remotePlayerId = checkersBoard.getOpponentId();
+        if(localPlayer.getId().equals(checkersBoard.getCreator().getId())) {
+            opponentPlayer = checkersBoard.getOpponent();
         } else {
-            remotePlayerId = checkersBoard.getCreatorId();
+            opponentPlayer = checkersBoard.getCreator();
         }
 
         activePlayerId = checkersBoard.getActivePlayerId();
@@ -544,11 +590,20 @@ public class BoardHandler {
         checkersBoard.setGameFlowRule(gameFlowRule);
     }
 
-    /**
-     * adds a lister to observe various board activities
-     */
-    public void addListener(final com.gerryshom.checkersboardview.board.listener.BoardListener listener) {
-        listeners.add(listener);
+    public void addMoveSequenceListener(final MoveSequenceListener moveSequenceListener) {
+        moveSequenceListeners.add(moveSequenceListener);
+    }
+
+    public void addPieceCapturedListener(final PieceCapturedListener pieceCapturedListener) {
+        pieceCapturedListeners.add(pieceCapturedListener);
+    }
+
+    public void addPlayerSwitchedListener(final PlayerSwitchedListener playerSwitchedListener) {
+        playerSwitchedListeners.add(playerSwitchedListener);
+    }
+
+    public void addWinListener(final WinListener winListener) {
+        winListeners.add(winListener);
     }
 
 }
