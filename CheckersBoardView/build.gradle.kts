@@ -38,7 +38,7 @@ project.afterEvaluate {
             create<MavenPublication>("libraryProject") {
                 groupId = "com.github.iamgerryshom"
                 artifactId = "CheckersBoardView"
-                version = "1.0.0"
+                version = "2.1.0"
                 artifact(layout.buildDirectory.file("outputs/aar/${project.name}-release.aar"))
             }
         }
@@ -52,6 +52,7 @@ project.afterEvaluate {
             }
         }
     }
+
 
     // Ensure the 'publishLibraryProjectPublicationToMavenRepository' depends on the 'bundleReleaseAar' task
     tasks.named("publishLibraryProjectPublicationToMavenRepository") {

@@ -135,7 +135,7 @@ public class CheckersBoardView extends View {
     public void setup(final CheckersBoard checkersBoard) {
 
         setRotation(
-                checkersBoard.getCreator().getId().equals(boardHandler.getLocalPlayer())
+                checkersBoard.getCreator().getId().equals(boardHandler.getLocalPlayer().getId())
                         ? 0
                         : 180
         );
