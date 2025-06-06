@@ -305,16 +305,16 @@ public class BoardHandler {
 
             if(checkersBoard.findMoveablePiecesByPlayerId(opponentPlayerId).isEmpty()) {
 
-                final Player myPlayer = checkersBoard.getCreator().getId().equals(localPlayer.getId())
+                final Player myLocalPlayer = checkersBoard.getCreator().getId().equals(localPlayer.getId())
                         ? checkersBoard.getCreator() : checkersBoard.getOpponent();
 
-                final Player opponentPlayer = checkersBoard.getCreator().getId().equals(myPlayer.getId())
+                final Player opponentPlayer = checkersBoard.getCreator().getId().equals(myLocalPlayer.getId())
                         ? checkersBoard.getOpponent() : checkersBoard.getCreator();
 
                 if(!winListeners.isEmpty()) {
                     for(WinListener winListener : winListeners) {
-                        final Player winnerPlayer = piece.getPlayerId().equals(myPlayer.getId())
-                                ? myPlayer : opponentPlayer;
+                        final Player winnerPlayer = piece.getPlayerId().equals(myLocalPlayer.getId())
+                                ? myLocalPlayer : opponentPlayer;
 
                         winListener.onWin(winnerPlayer);
                     }
@@ -509,14 +509,14 @@ public class BoardHandler {
     private void switchPlayers(final String activePlayerId) {
         this.activePlayerId = activePlayerId;
 
-        final Player myPlayer = checkersBoard.getCreator().getId().equals(localPlayer.getId())
+        final Player myLocalPlayer = checkersBoard.getCreator().getId().equals(localPlayer.getId())
                 ? checkersBoard.getCreator() : checkersBoard.getOpponent();
 
-        final Player opponentPlayer = checkersBoard.getCreator().getId().equals(myPlayer.getId())
+        final Player opponentPlayer = checkersBoard.getCreator().getId().equals(myLocalPlayer.getId())
                 ? checkersBoard.getOpponent() : checkersBoard.getCreator();
 
-        final Player activePlayer = activePlayerId.equals(myPlayer.getId())
-                ? myPlayer : opponentPlayer;
+        final Player activePlayer = activePlayerId.equals(myLocalPlayer.getId())
+                ? myLocalPlayer : opponentPlayer;
 
         if(!playerSwitchedListeners.isEmpty()) {
             for(PlayerSwitchedListener playerSwitchedListener : playerSwitchedListeners) {

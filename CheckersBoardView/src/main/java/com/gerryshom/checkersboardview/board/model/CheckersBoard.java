@@ -531,22 +531,22 @@ public class CheckersBoard {
      * @param activePlayerId the player who will start the game
      */
     public static CheckersBoard createCheckersBoard(@NonNull final String activePlayerId,
-                                             @NonNull final Player myPlayer,
+                                             @NonNull final Player localPlayer,
                                              @NonNull final Player opponentPlayer) {
 
         final CheckersBoard checkersBoard = new CheckersBoard();
 
-        checkersBoard.setCreator(myPlayer);
+        checkersBoard.setCreator(localPlayer);
         checkersBoard.setActivePlayerId(activePlayerId);
         checkersBoard.setOpponent(opponentPlayer);
 
-        checkersBoard.setPieces(createPieces(myPlayer.getId(), opponentPlayer.getId()));
+        checkersBoard.setPieces(createPieces(localPlayer.getId(), opponentPlayer.getId()));
 
         return checkersBoard;
 
     }
 
-    private static List<Piece> createPieces(final String myPlayerId, final String opponentPlayerId) {
+    private static List<Piece> createPieces(final String localPlayerId, final String opponentPlayerId) {
         final List<Piece> pieces = new ArrayList<>();
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -563,7 +563,7 @@ public class CheckersBoard {
                     piece.setPlayerId(opponentPlayerId);
                     piece.setColor("#FFFF99");
                 } else if(row >= 5) {
-                    piece.setPlayerId(myPlayerId);
+                    piece.setPlayerId(localPlayerId);
                     piece.setColor("#FFFFFFFF");
                 }
 

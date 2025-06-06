@@ -43,6 +43,11 @@ public class CheckersBoardView extends View {
     private Paint lightTilePaint;
 
     private BoardHandler boardHandler = new BoardHandler();
+    private Drawable localPlayerRegularPieceDrawable;
+    private Drawable localPlayerKingPieceDrawable;
+    private Drawable opponentPlayerRegularPieceDrawable;
+    private Drawable opponentPlayerKingPieceDrawable;
+    private int landingSpotColor;
 
     public CheckersBoardView(Context context) {
         super(context);
@@ -75,10 +80,38 @@ public class CheckersBoardView extends View {
         invalidate();
     }
 
+    public CheckersBoardView setLocalPlayerRegularPieceDrawable(final Drawable localPlayerRegularPieceDrawable) {
+        this.localPlayerRegularPieceDrawable = localPlayerRegularPieceDrawable;
+        return this;
+    }
+
+    public CheckersBoardView setLocalPlayerKingPieceDrawable(final Drawable localPlayerKingPieceDrawable) {
+        this.localPlayerKingPieceDrawable = localPlayerKingPieceDrawable;
+        return this;
+    }
+
+    public CheckersBoardView setOpponentPlayerRegularPieceDrawable(final Drawable opponentPlayerRegularPieceDrawable) {
+        this.opponentPlayerRegularPieceDrawable = opponentPlayerRegularPieceDrawable;
+        return this;
+    }
+
+    public CheckersBoardView setOpponentPlayerKingPieceDrawable(final Drawable opponentPlayerKingPieceDrawable) {
+        this.opponentPlayerKingPieceDrawable = opponentPlayerKingPieceDrawable;
+        return this;
+    }
+
     private void init(final AttributeSet attrs) {
         //tile paints
         darkTilePaint = DefaultPaint.darkTilePaint();
         lightTilePaint = DefaultPaint.lightTilePaint();
+
+        localPlayerRegularPieceDrawable = ContextCompat.getDrawable(getContext(), R.drawable.local_player_normal_piece_vector);
+        opponentPlayerRegularPieceDrawable = ContextCompat.getDrawable(getContext(), R.drawable.opponent_player_normal_piece_vector);
+
+        localPlayerKingPieceDrawable = ContextCompat.getDrawable(getContext(), R.drawable.local_player_king_piece_vector);
+        opponentPlayerKingPieceDrawable = ContextCompat.getDrawable(getContext(), R.drawable.opponent_player_king_piece_vector);
+
+        landingSpotColor = Color.RED;
 
         handleAttrs(attrs);
 
@@ -297,46 +330,25 @@ public class CheckersBoardView extends View {
 
     }
 
+    public CheckersBoardView setLandingSpotColor(final int landingSpotColor) {
+        this.landingSpotColor = landingSpotColor;
+        return this;
+    }
+
     private void drawLandingSpots(final Canvas canvas) {
-        // Paint for the outermost border circle (light green)
-        final Paint outerPaint = new Paint();
-        outerPaint.setColor(Color.parseColor("#81C784")); // Light green
-        outerPaint.setStyle(Paint.Style.STROKE);  // Stroke style (borders)
-        outerPaint.setAlpha(255);  // Full opacity
-        outerPaint.setAntiAlias(true);
-        outerPaint.setStrokeWidth(6f);  // Reduced border thickness for outer circle
+        final Paint paint = new Paint();
+        paint.setColor(landingSpotColor); // Bright red
+        paint.setStyle(Paint.Style.FILL);
+        paint.setAntiAlias(true);
+        paint.setAlpha(255); // Full opacity
 
-        // Paint for the inner border circle (light green)
-        final Paint innerPaint = new Paint();
-        innerPaint.setColor(Color.parseColor("#81C784")); // Light green
-        innerPaint.setStyle(Paint.Style.STROKE);  // Stroke style (borders)
-        innerPaint.setAlpha(180);  // Full opacity
-        innerPaint.setAntiAlias(true);
-        innerPaint.setStrokeWidth(3f);  // Reduced border thickness for inner circle (half the outer border thickness)
-
-        // Paint for the filled inner circle (red)
-        final Paint middlePaint = new Paint();
-        middlePaint.setColor(Color.parseColor("#F44336")); // Red color
-        middlePaint.setStyle(Paint.Style.FILL);  // Fill style for the circle
-        middlePaint.setAntiAlias(true);
-        middlePaint.setAlpha(180);  // Full opacity
-
-        // Define reduced radius values for the circles
-        final float outerRadius = (getWidth() / 8) * 0.25f; // Reduced outer circle radius (smaller gap between inner and outer)
-        final float innerRadius = outerRadius * 0.75f;    // Reduced inner circle radius
-        final float fillRadius = innerRadius * 0.85f;      // Smaller filled circle radius (closer to the inner circle)
+        final float radius = (getWidth() / 8f) * 0.15f; // Small radius
 
         for (LandingSpot landingSpot : boardHandler.getLandingSpots()) {
-            final PointF centerXY = boardHandler.getCheckersBoard().calculateCenterXYByRowAndCol(landingSpot.getRowCol().x, landingSpot.getRowCol().y);
+            final PointF centerXY = boardHandler.getCheckersBoard()
+                    .calculateCenterXYByRowAndCol(landingSpot.getRowCol().x, landingSpot.getRowCol().y);
 
-            // Draw the outermost border circle (light green)
-            canvas.drawCircle(centerXY.x, centerXY.y, outerRadius, outerPaint);
-
-            // Draw the inner border circle (light green)
-            canvas.drawCircle(centerXY.x, centerXY.y, innerRadius, innerPaint);
-
-            // Draw the filled inner circle (red)
-            canvas.drawCircle(centerXY.x, centerXY.y, fillRadius, middlePaint);
+            canvas.drawCircle(centerXY.x, centerXY.y, radius, paint);
         }
     }
 
@@ -392,12 +404,7 @@ public class CheckersBoardView extends View {
             drawHighlight(canvas, piece.getCenterX(), piece.getCenterY(), paint, cellSize, "#FF5722");
         }
 
-        // Now draw the actual piece (king or normal)
-        if (piece.isKing()) {
-            drawKingPiece(canvas, piece, paint, cellSize);
-        } else {
-            drawNormalPiece(canvas, piece, paint, cellSize);
-        }
+        drawPieceDrawable(canvas, piece, cellSize);
     }
 
     private void drawHighlight(final Canvas canvas, final float centerX, final float centerY, final Paint paint, final int cellSize, final String colorHex) {
@@ -429,30 +436,7 @@ public class CheckersBoardView extends View {
         canvas.drawRect(left - borderOffset, top - borderOffset, right + borderOffset, bottom + borderOffset, borderPaint); // Draw the border
     }
 
-
-    private void drawKingPiece(Canvas canvas, Piece piece, Paint paint, int cellSize) {
-        // Draw the king piece
-        paint.setColor(Color.parseColor(piece.getColor()));
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawCircle(piece.getCenterX(), piece.getCenterY(), cellSize * 0.4f, paint);
-
-        // Draw a crown (small circle) inside the king piece
-        paint.setColor(Color.RED); // Crown color
-        canvas.drawCircle(piece.getCenterX(), piece.getCenterY(), cellSize * 0.2f, paint);
-    }
-
-    private void drawNormalPiece(Canvas canvas, Piece piece, Paint paint, int cellSize) {
-        paint.setColor(Color.parseColor(piece.getColor()));
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawCircle(piece.getCenterX(), piece.getCenterY(), cellSize * 0.4f, paint);
-    }
-
-
-    private void drawPieceDrawable(Canvas canvas, Piece piece, Paint paint, int cellSize) {
-        // Get the vector drawable once and cache it if possible
-        Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.regular_piece_vector);
-        if (drawable == null) return;
-
+    private void drawPieceDrawable(Canvas canvas, Piece piece, int cellSize) {
 
         // Calculate bounds once
         int size = (int) (cellSize * 0.8f);
@@ -460,16 +444,44 @@ public class CheckersBoardView extends View {
         int centerX = (int) piece.getCenterX();
         int centerY = (int) piece.getCenterY();
 
-        // Set bounds
-        drawable.setBounds(
-                centerX - halfSize,
-                centerY - halfSize,
-                centerX + halfSize,
-                centerY + halfSize
-        );
 
-        // Draw
-        drawable.draw(canvas);
+        if(piece.isKing()) {
+            final Drawable drawable = piece.getPlayerId().equals(getLocalPlayer().getId())
+                    ? localPlayerKingPieceDrawable : opponentPlayerKingPieceDrawable;
+                    // Set bounds
+            drawable.setBounds(
+                    centerX - halfSize,
+                    centerY - halfSize,
+                    centerX + halfSize,
+                    centerY + halfSize
+            );
+
+            // Draw
+            drawable.draw(canvas);
+
+        } else {
+            final Drawable drawable = piece.getPlayerId().equals(getLocalPlayer().getId())
+                    ? localPlayerRegularPieceDrawable : opponentPlayerRegularPieceDrawable;
+            // Set bounds
+            drawable.setBounds(
+                    centerX - halfSize,
+                    centerY - halfSize,
+                    centerX + halfSize,
+                    centerY + halfSize
+            );
+
+            // Draw
+            drawable.draw(canvas);
+        }
+
+    }
+
+    public Player getLocalPlayer() {
+        return boardHandler.getLocalPlayer();
+    }
+
+    public Player getOpponentPlayer() {
+        return boardHandler.getOpponentPlayer();
     }
 
 

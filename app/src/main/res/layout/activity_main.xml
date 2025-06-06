@@ -30,8 +30,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_margin="32dp"
-            app:darkTileColor="#212121"
-            app:lightTileColor="#494949"
+
             android:layout_below="@id/tvActivePlayer"
             />
 
