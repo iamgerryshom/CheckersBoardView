@@ -1,5 +1,10 @@
 # CheckersBoardView
 
+![Platform](https://img.shields.io/badge/platform-Android-blue?logo=android)
+![Language](https://img.shields.io/badge/language-Java-orange?logo=java)
+![IDE](https://img.shields.io/badge/built%20with-Android%20Studio-green?logo=androidstudio)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 **CheckersBoardView** is a customizable Android View for displaying a classic **Checkers** (Draughts) board.  
 You can easily integrate it into your app, customize the appearance with XML attributes, and even define custom game rules!  
 It also supports playing against a computer opponent powered by the **Minimax algorithm**.
