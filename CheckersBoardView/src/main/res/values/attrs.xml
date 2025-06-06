@@ -3,5 +3,11 @@
     <declare-styleable name="CheckersBoardView">
         <attr name="darkTileColor" format="color"/>
         <attr name="lightTileColor" format="color"/>
+        <attr name="landingSpotColor" format="color"/>
+        <attr name="cornerRadius" format="dimension"/>
+        <attr name="localPlayerRegularPieceDrawable" format="reference" />
+        <attr name="opponentPlayerRegularPieceDrawable" format="reference" />
+        <attr name="localPlayerKingPieceDrawable" format="reference" />
+        <attr name="opponentPlayerKingPieceDrawable" format="reference" />
     </declare-styleable>
 </resources>

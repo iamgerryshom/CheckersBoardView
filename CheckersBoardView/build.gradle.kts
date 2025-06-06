@@ -38,7 +38,7 @@ project.afterEvaluate {
             create<MavenPublication>("libraryProject") {
                 groupId = "com.github.iamgerryshom"
                 artifactId = "CheckersBoardView"
-                version = "2.1.0"
+                version = "local-version-2.1.0"
                 artifact(layout.buildDirectory.file("outputs/aar/${project.name}-release.aar"))
             }
         }

@@ -5,9 +5,12 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -47,7 +50,12 @@ public class CheckersBoardView extends View {
     private Drawable localPlayerKingPieceDrawable;
     private Drawable opponentPlayerRegularPieceDrawable;
     private Drawable opponentPlayerKingPieceDrawable;
+
     private int landingSpotColor;
+    private float cornerRadius;
+
+    private int defaultRadiusInDp = 6;
+    private int defaultLadingSpotColor = Color.RED;
 
     public CheckersBoardView(Context context) {
         super(context);
@@ -111,7 +119,9 @@ public class CheckersBoardView extends View {
         localPlayerKingPieceDrawable = ContextCompat.getDrawable(getContext(), R.drawable.local_player_king_piece_vector);
         opponentPlayerKingPieceDrawable = ContextCompat.getDrawable(getContext(), R.drawable.opponent_player_king_piece_vector);
 
-        landingSpotColor = Color.RED;
+        setCornerRadius(defaultRadiusInDp); //default corner radius
+
+        setLandingSpotColor(defaultLadingSpotColor); //default landing spot color
 
         handleAttrs(attrs);
 
@@ -208,6 +218,11 @@ public class CheckersBoardView extends View {
         boardHandler.setRule(gameFlowRule);
     }
 
+    public void setCornerRadius(final int dp) {
+        float scale = getResources().getDisplayMetrics().density;
+        this.cornerRadius = dp * scale;
+    }
+
     /**
      * sets the attributes defined in xml
      */
@@ -220,6 +235,22 @@ public class CheckersBoardView extends View {
         try {
             darkTilePaint.setColor(a.getColor(R.styleable.CheckersBoardView_darkTileColor, Color.rgb(82, 41, 0)));
             lightTilePaint.setColor(a.getColor(R.styleable.CheckersBoardView_lightTileColor, Color.rgb(192, 144, 105)));
+            setLandingSpotColor(a.getColor(R.styleable.CheckersBoardView_landingSpotColor, defaultLadingSpotColor));
+            setCornerRadius(a.getDimensionPixelSize(R.styleable.CheckersBoardView_cornerRadius, defaultRadiusInDp));
+
+            final Drawable localRegular = a.getDrawable(R.styleable.CheckersBoardView_localPlayerRegularPieceDrawable);
+            if (localRegular != null) setLocalPlayerRegularPieceDrawable(localRegular);
+
+            final Drawable localKing = a.getDrawable(R.styleable.CheckersBoardView_localPlayerKingPieceDrawable);
+            if (localKing != null) setLocalPlayerKingPieceDrawable(localKing);
+
+            final Drawable opponentRegular = a.getDrawable(R.styleable.CheckersBoardView_opponentPlayerRegularPieceDrawable);
+            if (opponentRegular != null) setOpponentPlayerRegularPieceDrawable(opponentRegular);
+
+            final Drawable opponentKing = a.getDrawable(R.styleable.CheckersBoardView_opponentPlayerKingPieceDrawable);
+            if (opponentKing != null) setOpponentPlayerKingPieceDrawable(opponentKing);
+
+
         } finally {
             a.recycle();
         }
@@ -356,18 +387,38 @@ public class CheckersBoardView extends View {
 
         final int cellSize = getWidth() / 8;
 
-        for(int row = 0; row < 8; row++) {
-            for(int col = 0; col < 8; col++) {
-
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
                 final Paint paint = CheckersBoard.isDarkCell(row, col) ? darkTilePaint : lightTilePaint;
 
-                final int left = col * cellSize;
-                final int top = row * cellSize;
-                final int right = left + cellSize;
-                final int bottom = top + cellSize;
+                final float left = col * cellSize;
+                final float top = row * cellSize;
+                final float right = left + cellSize;
+                final float bottom = top + cellSize;
 
-                canvas.drawRect(left, top, right, bottom, paint);
+                boolean topLeft = (row == 0 && col == 0);
+                boolean topRight = (row == 0 && col == 7);
+                boolean bottomLeft = (row == 7 && col == 0);
+                boolean bottomRight = (row == 7 && col == 7);
 
+                if (topLeft || topRight || bottomLeft || bottomRight) {
+                    float[] radii = new float[8];
+
+                    if (topLeft)
+                        radii = new float[] {cornerRadius, cornerRadius, 0, 0, 0, 0, 0, 0};
+                    else if (topRight)
+                        radii = new float[] {0, 0, cornerRadius, cornerRadius, 0, 0, 0, 0};
+                    else if (bottomRight)
+                        radii = new float[] {0, 0, 0, 0, cornerRadius, cornerRadius, 0, 0};
+                    else if (bottomLeft)
+                        radii = new float[] {0, 0, 0, 0, 0, 0, cornerRadius, cornerRadius};
+
+                    Path path = new Path();
+                    path.addRoundRect(new RectF(left, top, right, bottom), radii, Path.Direction.CW);
+                    canvas.drawPath(path, paint);
+                } else {
+                    canvas.drawRect(left, top, right, bottom, paint);
+                }
             }
         }
 
