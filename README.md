@@ -20,15 +20,11 @@ It also supports playing against a computer opponent powered by the **Minimax al
 
 ## 📦 Installation
 
-<details>
 <summary><b>Gradle</b></summary>
 
 ```gradle
-implementation 'com.github.iamgerryshom:CheckersBoardView:2.0.2'
+implementation 'com.github.iamgerryshom:CheckersBoardView:2.1.3'
 ```
-</details>
-
-Alternatively, you can clone or copy the `CheckersBoardView` class directly into your project.
 
 ---
 
@@ -53,66 +49,48 @@ Add the `CheckersBoardView` to your layout:
 ### Programmatic Setup
 
 ```java
-/**
- * Opponent can be computer or real human.
- * Use inbuilt computer playerId if playing with computer,
- * or define a custom ID if playing with another human.
- */
-final String opponentPlayerId = Player.computer().getId(); // Inbuilt computer ID
-final String humanPlayerId = "Human"; // Your human player ID
+// Define players
+final Player opponentPlayer = Player.computer(); // Built-in computer opponent
+final Player humanPlayer = new Player("Human", "Human");
 
-binding.checkersBoardView.setMyPlayerId(humanPlayerId)
-    .addListener(new CheckersBoardView.BoardListener() {
-        @Override
-        public void onPieceCompletedMoveSequence(MoveSequence moveSequence) {
-            /**
-             * Triggered when a player's piece lands on the final tile of their move.
-             * moveSequence contains a list of all moves made in this sequence.
-             */
-        }
-
-        @Override
-        public void onActivePlayerSwitched(String newActivePlayerId) {
-            /**
-             * Triggered when a complete move sequence ends and control switches to the opponent.
-             */
-            binding.tvActivePlayer.setText(
-                newActivePlayerId.equals(Player.computer().getId()) ? "Computer's turn" : "Your turn"
-            );
-        }
-
-        @Override
-        public void onWin(String winnerPlayerId) {
-            /**
-             * Triggered when either player can no longer make any valid moves.
-             */
-            binding.tvActivePlayer.setText(
-                winnerPlayerId.equals(Player.computer().getId()) ? "Computer Won" : "You Won"
-            );
-        }
-
-        @Override
-        public void onPieceCaptured(String capturedPiecePlayerId, int remainingPieceCount) {
-            /**
-             * Triggered when a piece is captured either via a single jump or a multi-jump chain.
-             */
-            if (capturedPiecePlayerId.equals(Player.computer().getId())) {
-                binding.tvOpponentPieceCount.setText("Computer: " + remainingPieceCount);
-            } else {
-                binding.tvMyPlayerPieceCount.setText("You: " + remainingPieceCount);
-            }
+// Set up Checkers board
+binding.checkersBoardView.setLocalPlayer(humanPlayer)
+    .addMoveSequenceListener(moveSequence -> {
+        // Triggered when a player's piece finishes its move sequence
+        // 'moveSequence' contains a list of all the moves made
+    })
+    .addPlayerSwitchedListener(newActivePlayer -> {
+        // Triggered after a player completes their turn and it's the opponent's turn
+        binding.tvActivePlayer.setText(
+            newActivePlayer.getId().equals(Player.computer().getId())
+                ? "Computer's turn"
+                : "Your turn"
+        );
+    })
+    .addWinListener(winnerPlayer -> {
+        // Triggered when either player cannot make any more valid moves
+        binding.tvActivePlayer.setText(
+            winnerPlayer.getId().equals(Player.computer().getId())
+                ? "Computer Won"
+                : "You Win"
+        );
+    })
+    .addPieceCapturedListener((capturedPiecePlayerId, remainingPieceCount) -> {
+        // Triggered whenever a piece is captured (single or chained)
+        if (capturedPiecePlayerId.equals(Player.computer().getId())) {
+            binding.tvOpponentPieceCount.setText("Computer: " + remainingPieceCount);
+        } else {
+            binding.tvMyPlayerPieceCount.setText("You: " + remainingPieceCount);
         }
     })
-    /**
-    * best used for for multiplayer games where you need them to share the same board with exactly the same data
-    */
-    //.setup(checkersBoard) 
+    // Choose one of the setup methods below:
+    
+    // For syncing the board state in multiplayer (online or LAN)
+    //.setup(checkersBoard)
 
-    /**
-    * best used for single device player game
-    * playing with opponent on the same device eg playing with computer
-    */
-    .setup(humanPlayerId, opponentPlayerId);
+    // For local single-device play (e.g., against the computer or friend)
+    .setup(humanPlayer.getId(), opponentPlayer);
+
 ```
 
 ---
@@ -174,10 +152,19 @@ binding.checkersBoardView.playOpponentMoveSequence(remotePlayerMoveSequence);
 
 ## ⚙️ Custom Attributes
 
-| Attribute            | Description              | Example   |
-|----------------------|--------------------------|-----------|
-| `app:darkTileColor`  | Color for dark tiles     | `#212121` |
-| `app:lightTileColor` | Color for light tiles    | `#494949` |
+| Attribute | Description | Example |
+|----------|-------------|---------|
+| `app:darkTileColor` | Color used for dark tiles on the board | `#212121` |
+| `app:lightTileColor` | Color used for light tiles on the board | `#494949` |
+| `app:landingSpotColor` | Highlight color for potential move/landing spots | `#FFD700` |
+| `app:cornerRadius` | Corner radius for board tiles, in dp | `8dp` |
+| `app:localPlayerRegularPieceDrawable` | Drawable resource for the local player's regular piece | `@drawable/player_piece` |
+| `app:opponentPlayerRegularPieceDrawable` | Drawable resource for the opponent's regular piece | `@drawable/opponent_piece` |
+| `app:localPlayerKingPieceDrawable` | Drawable resource for the local player's king piece | `@drawable/player_king` |
+| `app:opponentPlayerKingPieceDrawable` | Drawable resource for the opponent's king piece | `@drawable/opponent_king` |
+
+
+
 
 ---
 
@@ -185,7 +172,7 @@ binding.checkersBoardView.playOpponentMoveSequence(remotePlayerMoveSequence);
 
 <p align="center">
   <br/>
-  <img src="assets/screenshot.jpeg" alt="In-game Screenshot" width="400"/>
+  <img src="assets/screenshot.jpg" alt="In-game Screenshot" width="400"/>
 </p>
 
 ---
