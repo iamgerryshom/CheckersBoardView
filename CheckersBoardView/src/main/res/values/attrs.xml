@@ -9,5 +9,7 @@
         <attr name="opponentPlayerRegularPieceDrawable" format="reference" />
         <attr name="localPlayerKingPieceDrawable" format="reference" />
         <attr name="opponentPlayerKingPieceDrawable" format="reference" />
+        <attr name="touchDisabled" format="boolean" />
+
     </declare-styleable>
 </resources>

@@ -6,14 +6,14 @@ public class KingPieceRule {
     private boolean canChangeDirectionDuringMultiJump;
     private boolean canMoveImmediatelyAfterPromotion;
 
-    public KingPieceRule() {
-    }
-
     public KingPieceRule(int maxMoveSteps, int maxLandingDistanceAfterCapture, boolean canChangeDirectionDuringMultiJump, boolean canMoveImmediatelyAfterPromotion) {
         this.maxMoveSteps = maxMoveSteps;
         this.maxLandingDistanceAfterCapture = maxLandingDistanceAfterCapture;
         this.canChangeDirectionDuringMultiJump = canChangeDirectionDuringMultiJump;
         this.canMoveImmediatelyAfterPromotion = canMoveImmediatelyAfterPromotion;
+    }
+
+    public KingPieceRule() {
     }
 
     public KingPieceRule clone() {

@@ -54,6 +54,8 @@ public class CheckersBoardView extends View {
     private int landingSpotColor;
     private float cornerRadius;
 
+    private boolean touchDisabled;
+
     private int defaultRadiusInDp = 6;
     private int defaultLadingSpotColor = Color.RED;
 
@@ -105,6 +107,11 @@ public class CheckersBoardView extends View {
 
     public CheckersBoardView setOpponentPlayerKingPieceDrawable(final Drawable opponentPlayerKingPieceDrawable) {
         this.opponentPlayerKingPieceDrawable = opponentPlayerKingPieceDrawable;
+        return this;
+    }
+
+    public CheckersBoardView setTouchDisabled(final boolean touchDisabled) {
+        this.touchDisabled = touchDisabled;
         return this;
     }
 
@@ -250,6 +257,7 @@ public class CheckersBoardView extends View {
             final Drawable opponentKing = a.getDrawable(R.styleable.CheckersBoardView_opponentPlayerKingPieceDrawable);
             if (opponentKing != null) setOpponentPlayerKingPieceDrawable(opponentKing);
 
+            touchDisabled = a.getBoolean(R.styleable.CheckersBoardView_touchDisabled, false);
 
         } finally {
             a.recycle();
@@ -276,20 +284,30 @@ public class CheckersBoardView extends View {
         });
     }
 
+
     private void getDimensions(final DimensionsListener listener) {
-        if(getWidth() != 0 || getHeight() != 0) {
+        if (getWidth() > 0 && getHeight() > 0) {
             listener.onAvailable(getWidth(), getHeight());
             return;
         }
-        getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-            @Override
-            public boolean onPreDraw() {
-                getViewTreeObserver().removeOnPreDrawListener(this);
+
+        post(() -> {
+            if (getWidth() > 0 && getHeight() > 0) {
                 listener.onAvailable(getWidth(), getHeight());
-                return true;
+            } else {
+                getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        if (getWidth() > 0 && getHeight() > 0) {
+                            getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                            listener.onAvailable(getWidth(), getHeight());
+                        }
+                    }
+                });
             }
         });
     }
+
 
     private interface DimensionsListener {
         void onAvailable(final float width, final float height);
@@ -297,38 +315,33 @@ public class CheckersBoardView extends View {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int desiredSize = getWidth() / 8;
-
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
 
-        int width, height;
+        int size;
 
         if (widthMode == MeasureSpec.EXACTLY) {
-            width = widthSize;
-        } else if (widthMode == MeasureSpec.AT_MOST) {
-            width = Math.min(desiredSize, widthSize);
+            // Width fixed (e.g. match_parent or exact)
+            size = widthSize;
+        } else if (heightMode == MeasureSpec.EXACTLY) {
+            // Width not fixed, but height fixed, use height as size
+            size = heightSize;
         } else {
-            width = desiredSize;
+            // Neither fixed, choose default size
+            size = 400; // or whatever default size you want
         }
 
-        if (heightMode == MeasureSpec.EXACTLY) {
-            height = heightSize;
-        } else if (heightMode == MeasureSpec.AT_MOST) {
-            height = Math.min(desiredSize, heightSize);
-        } else {
-            height = desiredSize;
-        }
-
-        int size = Math.min(width, height); // Make it square
-
-        setMeasuredDimension(size, size);
+        setMeasuredDimension(size, size); // force square
     }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+
+        if(touchDisabled) return true;
 
         final float touchX = event.getX();
         final float touchY = event.getY();
@@ -384,17 +397,26 @@ public class CheckersBoardView extends View {
     }
 
     private void drawBoard(final Canvas canvas) {
+        final float boardWidth = getWidth();
+        final float boardHeight = getHeight();
 
-        final int cellSize = getWidth() / 8;
+        // cell size based on board size, can handle non-square if needed
+        final float cellWidth = boardWidth / 8f;
+        final float cellHeight = boardHeight / 8f;
 
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
                 final Paint paint = CheckersBoard.isDarkCell(row, col) ? darkTilePaint : lightTilePaint;
 
-                final float left = col * cellSize;
-                final float top = row * cellSize;
-                final float right = left + cellSize;
-                final float bottom = top + cellSize;
+                // Calculate left, top, right, bottom using floats
+                final float left = col * cellWidth;
+                final float top = row * cellHeight;
+
+                // For the last column, force right edge to boardWidth to avoid gap
+                final float right = (col == 7) ? boardWidth : left + cellWidth;
+
+                // For the last row, force bottom edge to boardHeight to avoid gap
+                final float bottom = (row == 7) ? boardHeight : top + cellHeight;
 
                 boolean topLeft = (row == 0 && col == 0);
                 boolean topRight = (row == 0 && col == 7);
@@ -421,8 +443,8 @@ public class CheckersBoardView extends View {
                 }
             }
         }
-
     }
+
 
     private void drawPieces(final Canvas canvas) {
 
