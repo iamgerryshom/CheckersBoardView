@@ -284,6 +284,41 @@ public class CheckersBoardView extends View {
         });
     }
 
+    public void clearListeners() {
+        boardHandler.clearListeners();
+    }
+
+    public void clearMoveSequenceListeners() {
+        boardHandler.clearMoveSequenceListeners();
+    }
+
+    public void clearWinListeners() {
+        boardHandler.clearWinListeners();
+    }
+
+    public void clearPieceCapturedListeners() {
+        boardHandler.clearPieceCapturedListeners();
+    }
+
+    public void clearPlayerSwitchedListeners() {
+        boardHandler.clearPlayerSwitchedListeners();
+    }
+
+    public void removeMoveSequenceListener(final MoveSequenceListener moveSequenceListener) {
+        boardHandler.removeMoveSequenceListener(moveSequenceListener);
+    }
+
+    public void removeWinListener(final WinListener winListener) {
+        boardHandler.removeWinListener(winListener);
+    }
+
+    public void removePieceCapturedListener(final PieceCapturedListener pieceCapturedListener) {
+        boardHandler.removePieceCapturedListener(pieceCapturedListener);
+    }
+
+    public void removePlayerSwitchedListener(final PlayerSwitchedListener playerSwitchedListener) {
+        boardHandler.removePlayerSwitchedListener(playerSwitchedListener);
+    }
 
     private void getDimensions(final DimensionsListener listener) {
         if (getWidth() > 0 && getHeight() > 0) {

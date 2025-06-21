@@ -57,6 +57,42 @@ public class CheckersBoard {
     }
 
     /**
+     * finds enemy pieces in all four immediate directions of a piece
+     * then checks if those opponent pieces have a capture advantage on the piece
+     * @param piece to perform the check on
+     * @return true if they have capture advantage and false if not
+     */
+    public boolean pieceIsExposed(final Piece piece) {
+
+        final List<Piece> surroundingOpponentPieces =
+                findImmediateOpponentPiecesByDirection(
+                        piece, Arrays.asList(Direction.TOP_LEFT, Direction.TOP_RIGHT, Direction.BOTTOM_LEFT, Direction.BOTTOM_RIGHT)
+                );
+
+        for(Piece opponentPiece : surroundingOpponentPieces) {
+            final List<LandingSpot> landingSpots = findLandingSpots(
+                    opponentPiece, opponentPiece.getRow(), opponentPiece.getCol()
+            );
+
+            for(LandingSpot landingSpot : landingSpots) {
+
+                if(landingSpot.isAfterJump()) {
+                    final Piece jumpedPiece = findCaptureBetweenRowCols(opponentPiece.getPlayerId(), opponentPiece.getRow(), opponentPiece.getCol(),
+                            landingSpot.getRowCol().x, landingSpot.getRowCol().y);
+
+                    if(jumpedPiece.getId().equals(piece.getId())) {
+                        return true;
+                    }
+                }
+
+            }
+
+        }
+
+        return false;
+    }
+
+    /**
      * returns the number of pieces for a player
      * @param playerId - id of the player to count remaining pieces
      * @return an int of the remaining pieces count
@@ -294,8 +330,32 @@ public class CheckersBoard {
     }
 
     /**
+     * returns opponent pieces surrounding a piece
+     */
+    public List<Piece> findImmediateOpponentPiecesByDirection(final Piece piece, final List<Direction> directions) {
+        final List<Piece> opponentPieces = new ArrayList<>();
+        final String opponentId = identifyOpponentPlayerId(piece.getPlayerId());
+
+        for (Direction direction : directions) {
+            int nextRow = piece.getRow() + direction.toPoint().x;
+            int nextCol = piece.getCol() + direction.toPoint().y;
+
+            if (!isValidRowCol(nextRow, nextCol)) continue;
+
+            final Piece adjacentPiece = findPieceByRowAndCol(nextRow, nextCol);
+
+            if (adjacentPiece != null && opponentId.equals(adjacentPiece.getPlayerId())) {
+                opponentPieces.add(adjacentPiece);
+            }
+        }
+
+        return opponentPieces;
+    }
+
+
+    /**
      * returns all the pieces a player can possibly capture in all directions
-     * @param piece the id of the player attempting to make a move
+     * @param piece the piece of the player attempting to make a move
      * @return a list of the pieces
      */
     public List<Piece> findCapturesByRowAndCol(final Piece piece, final int row, final int col) {

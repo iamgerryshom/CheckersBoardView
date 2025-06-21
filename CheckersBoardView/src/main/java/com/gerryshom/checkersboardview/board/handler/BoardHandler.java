@@ -332,6 +332,45 @@ public class BoardHandler {
         this.movementDurationMillis = movementDurationMillis;
     }
 
+    public void clearListeners() {
+        clearMoveSequenceListeners();
+        clearWinListeners();
+        clearPieceCapturedListeners();
+        clearPlayerSwitchedListeners();
+    }
+
+    public void clearMoveSequenceListeners() {
+        moveSequenceListeners.clear();
+    }
+
+    public void clearWinListeners() {
+        winListeners.clear();
+    }
+
+    public void clearPieceCapturedListeners() {
+        pieceCapturedListeners.clear();
+    }
+
+    public void clearPlayerSwitchedListeners() {
+        playerSwitchedListeners.clear();
+    }
+
+    public void removeMoveSequenceListener(final MoveSequenceListener moveSequenceListener) {
+        moveSequenceListeners.remove(moveSequenceListener);
+    }
+
+    public void removeWinListener(final WinListener winListener) {
+        winListeners.remove(winListener);
+    }
+
+    public void removePieceCapturedListener(final PieceCapturedListener pieceCapturedListener) {
+        pieceCapturedListeners.remove(pieceCapturedListener);
+    }
+
+    public void removePlayerSwitchedListener(final PlayerSwitchedListener playerSwitchedListener) {
+        playerSwitchedListeners.remove(playerSwitchedListener);
+    }
+
     private interface AnimationListener {
         void onAnimationEnd();
     }
@@ -544,7 +583,7 @@ public class BoardHandler {
             throw new RuntimeException("activePlayerId cannot be null");
 
         if (!checkersBoard.getCreator().getId().equals(checkersBoard.getActivePlayerId())
-                && !checkersBoard.getOpponent().equals(checkersBoard.getActivePlayerId()))
+                && !checkersBoard.getOpponent().getId().equals(checkersBoard.getActivePlayerId()))
             throw new RuntimeException("activePlayerId must be the id either players");
 
         this.checkersBoard = checkersBoard;

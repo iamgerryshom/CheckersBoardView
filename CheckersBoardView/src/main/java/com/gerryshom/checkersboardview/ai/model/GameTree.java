@@ -36,25 +36,12 @@ public class GameTree {
 
         setRoot(root);
 
-        setOptimalNode(findOptimalNode());
+        setOptimalNode(getRoot().getOptimalNode());
 
         return this;
 
     }
 
-    /**
-     * randomly picks any first level node with a score that matches
-     * that of the root node
-     *
-     * i know its stupid
-     */
-    public Node findOptimalNode() {
-        final List<Node> children = new ArrayList<>();
-        for(Node child : root.getChildren()) {
-            if(child.getScore() == root.getScore()) children.add(child);
-        }
-        return children.get(random.nextInt(children.size()));
-    }
 
     public Node getOptimalNode() {
         return optimalNode;
