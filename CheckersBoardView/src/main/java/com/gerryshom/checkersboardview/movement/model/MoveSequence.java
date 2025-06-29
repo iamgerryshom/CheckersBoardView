@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MoveSequence {
-    private String destination;
+    private String opponentPlayerId;
+    private String currentPlayerId;
     private List<Move> moves = new ArrayList<>();
+    private int opponentPlayerMoveablePieceCount;
+    private int currentPlayerMoveablePieceCount;
 
     public MoveSequence deepClone() {
-        return new MoveSequence(destination, cloneMoves(moves));
+        return new MoveSequence(opponentPlayerId, currentPlayerId, cloneMoves(moves), currentPlayerMoveablePieceCount, opponentPlayerMoveablePieceCount);
     }
 
     private List<Move> cloneMoves(final List<Move> moves) {
@@ -20,20 +23,57 @@ public class MoveSequence {
         return clonedMoves;
     }
 
-    public MoveSequence(String destination, List<Move> moves) {
-        this.destination = destination;
+    public MoveSequence(String opponentPlayerId,
+                        String currentPlayerId,
+                        List<Move> moves,
+                        int currentPlayerMoveablePieceCount,
+                        int opponentPlayerMoveablePieceCount
+    ) {
+        this.opponentPlayerId = opponentPlayerId;
         this.moves = moves;
+        this.currentPlayerId = currentPlayerId;
+        this.opponentPlayerMoveablePieceCount = opponentPlayerMoveablePieceCount;
+        this.currentPlayerMoveablePieceCount = currentPlayerMoveablePieceCount;
+    }
+
+    public MoveSequence(String opponentPlayerId, List<Move> moves) {
+        this.opponentPlayerId = opponentPlayerId;
+        this.moves = moves;
+    }
+
+    public String getCurrentPlayerId() {
+        return currentPlayerId;
+    }
+
+    public void setCurrentPlayerId(String currentPlayerId) {
+        this.currentPlayerId = currentPlayerId;
+    }
+
+    public int getCurrentPlayerMoveablePieceCount() {
+        return currentPlayerMoveablePieceCount;
+    }
+
+    public void setCurrentPlayerMoveablePieceCount(int currentPlayerMoveablePieceCount) {
+        this.currentPlayerMoveablePieceCount = currentPlayerMoveablePieceCount;
+    }
+
+    public int getOpponentPlayerMoveablePieceCount() {
+        return opponentPlayerMoveablePieceCount;
+    }
+
+    public void setOpponentPlayerMoveablePieceCount(int opponentPlayerMoveablePieceCount) {
+        this.opponentPlayerMoveablePieceCount = opponentPlayerMoveablePieceCount;
     }
 
     public MoveSequence() {
     }
 
-    public String getDestination() {
-        return destination;
+    public String getOpponentPlayerId() {
+        return opponentPlayerId;
     }
 
-    public void setDestination(String destination) {
-        this.destination = destination;
+    public void setOpponentPlayerId(String opponentPlayerId) {
+        this.opponentPlayerId = opponentPlayerId;
     }
 
     public List<Move> getMoves() {

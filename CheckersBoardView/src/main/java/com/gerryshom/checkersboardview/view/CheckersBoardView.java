@@ -59,6 +59,8 @@ public class CheckersBoardView extends View {
     private int defaultRadiusInDp = 6;
     private int defaultLadingSpotColor = Color.RED;
 
+    private int rotation = 0;
+
     public CheckersBoardView(Context context) {
         super(context);
         init(null);
@@ -184,11 +186,13 @@ public class CheckersBoardView extends View {
 
     public void setup(final CheckersBoard checkersBoard) {
 
-        setRotation(
-                checkersBoard.getCreator().getId().equals(boardHandler.getLocalPlayer().getId())
-                        ? 0
-                        : 180
-        );
+        if(checkersBoard.getCreator().getId().equals(boardHandler.getLocalPlayer().getId())) {
+            rotation = 0;
+            setRotation(0);
+        } else {
+            rotation = 180;
+            setRotation(180);
+        }
 
         getDimensions((width, height)->{
             checkersBoard.setBoardWidth((int) width);
@@ -273,8 +277,10 @@ public class CheckersBoardView extends View {
             checkersBoard.setBoardWidth((int) width);
 
                 if(boardHandler.getLocalPlayer().equals(checkersBoard.getCreator().getId())) {
+                    rotation = 0;
                     setRotation(0);
                 } else {
+                    rotation = 180;
                     setRotation(180); // rotates the board so that the player at the top can play as if they are at the bottom. This makes it easier to play instead of rotating the whole device/
                 }
 
@@ -512,7 +518,7 @@ public class CheckersBoardView extends View {
             drawHighlight(canvas, piece.getCenterX(), piece.getCenterY(), paint, cellSize, "#FF5722");
         }
 
-        drawPieceDrawable(canvas, piece, cellSize);
+        drawPieceDrawable(canvas, piece, cellSize, rotation);
     }
 
     private void drawHighlight(final Canvas canvas, final float centerX, final float centerY, final Paint paint, final int cellSize, final String colorHex) {
@@ -544,14 +550,13 @@ public class CheckersBoardView extends View {
         canvas.drawRect(left - borderOffset, top - borderOffset, right + borderOffset, bottom + borderOffset, borderPaint); // Draw the border
     }
 
-    private void drawPieceDrawable(Canvas canvas, Piece piece, int cellSize) {
+    private void drawPieceDrawable(final Canvas canvas, final Piece piece, final int cellSize, final int degree) {
 
         // Calculate bounds once
         int size = (int) (cellSize * 0.8f);
         int halfSize = size / 2;
         int centerX = (int) piece.getCenterX();
         int centerY = (int) piece.getCenterY();
-
 
         if(piece.isKing()) {
             final Drawable drawable = piece.getPlayerId().equals(getLocalPlayer().getId())
@@ -577,9 +582,14 @@ public class CheckersBoardView extends View {
                     centerX + halfSize,
                     centerY + halfSize
             );
-
-            // Draw
-            drawable.draw(canvas);
+            // Always match save/restore
+            canvas.save();
+            try {
+                canvas.rotate(degree, centerX, centerY);
+                drawable.draw(canvas);
+            } finally {
+                canvas.restore(); // Ensure this always happens
+            }
         }
 
     }

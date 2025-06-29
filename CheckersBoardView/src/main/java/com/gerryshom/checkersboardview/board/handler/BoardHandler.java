@@ -242,7 +242,15 @@ public class BoardHandler {
 
         if(!moveSequenceListeners.isEmpty()) {
             for(MoveSequenceListener moveSequenceListener : moveSequenceListeners) {
-                moveSequenceListener.onPieceCompletedMoveSequence(new MoveSequence(opponentPlayer.getId(), moves));
+                moveSequenceListener.onPieceCompletedMoveSequence(
+                        new MoveSequence(
+                                opponentPlayer.getId(),
+                                localPlayer.getId(),
+                                moves,
+                                checkersBoard.getPieceCountByPlayerId(localPlayer.getId()),
+                                checkersBoard.getPieceCountByPlayerId(opponentPlayer.getId())
+                        )
+                );
             }
         }
 

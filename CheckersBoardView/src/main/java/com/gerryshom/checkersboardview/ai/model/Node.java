@@ -259,7 +259,7 @@ public class Node {
             // Create a node representing the complete jump sequence
             final Node completeJumpNode = new Node();
             final MoveSequence fullJumpSequence = new MoveSequence(
-                    getMoveSequence().getDestination(),
+                    getMoveSequence().getOpponentPlayerId(),
                     new ArrayList<>(movesInCurrentPath)
             );
             completeJumpNode.setMoveSequence(fullJumpSequence);

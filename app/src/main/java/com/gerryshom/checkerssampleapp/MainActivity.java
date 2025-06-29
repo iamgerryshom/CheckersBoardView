@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
         binding.checkersBoardView.setLocalPlayer(humanPlayer)
                 .addMoveSequenceListener(moveSequence ->{
+                    System.out.println(moveSequence);
                     /**
                      * Triggered as soon as a player's piece lands
                      * in the final tile

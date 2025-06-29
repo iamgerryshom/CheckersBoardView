@@ -9,7 +9,6 @@ android {
 
     defaultConfig {
         minSdk = 21
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -38,7 +37,7 @@ project.afterEvaluate {
             create<MavenPublication>("libraryProject") {
                 groupId = "com.github.iamgerryshom"
                 artifactId = "CheckersBoardView"
-                version = "local-version-2.1.6"
+                version = "local-version-2.1.7"
                 artifact(layout.buildDirectory.file("outputs/aar/${project.name}-release.aar"))
             }
         }
@@ -52,7 +51,6 @@ project.afterEvaluate {
             }
         }
     }
-
 
     // Ensure the 'publishLibraryProjectPublicationToMavenRepository' depends on the 'bundleReleaseAar' task
     tasks.named("publishLibraryProjectPublicationToMavenRepository") {
