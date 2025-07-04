@@ -9,9 +9,11 @@ public class MoveSequence {
     private List<Move> moves = new ArrayList<>();
     private int opponentPlayerMoveablePieceCount;
     private int currentPlayerMoveablePieceCount;
+    private long createdAt;
+    private long expiresIn;
 
     public MoveSequence deepClone() {
-        return new MoveSequence(opponentPlayerId, currentPlayerId, cloneMoves(moves), currentPlayerMoveablePieceCount, opponentPlayerMoveablePieceCount);
+        return new MoveSequence(opponentPlayerId, currentPlayerId, cloneMoves(moves), currentPlayerMoveablePieceCount, opponentPlayerMoveablePieceCount, createdAt, expiresIn);
     }
 
     private List<Move> cloneMoves(final List<Move> moves) {
@@ -27,7 +29,9 @@ public class MoveSequence {
                         String currentPlayerId,
                         List<Move> moves,
                         int currentPlayerMoveablePieceCount,
-                        int opponentPlayerMoveablePieceCount
+                        int opponentPlayerMoveablePieceCount,
+                        long createdAt,
+                        long expiresIn
     ) {
         this.opponentPlayerId = opponentPlayerId;
         this.moves = moves;
@@ -39,6 +43,22 @@ public class MoveSequence {
     public MoveSequence(String opponentPlayerId, List<Move> moves) {
         this.opponentPlayerId = opponentPlayerId;
         this.moves = moves;
+    }
+
+    public long getExpiresIn() {
+        return expiresIn;
+    }
+
+    public void setExpiresIn(long expiresIn) {
+        this.expiresIn = expiresIn;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
     }
 
     public String getCurrentPlayerId() {
