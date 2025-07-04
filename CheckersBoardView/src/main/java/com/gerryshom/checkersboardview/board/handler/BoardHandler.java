@@ -247,8 +247,8 @@ public class BoardHandler {
                                 opponentPlayer.getId(),
                                 localPlayer.getId(),
                                 moves,
-                                checkersBoard.getPieceCountByPlayerId(localPlayer.getId()),
-                                checkersBoard.getPieceCountByPlayerId(opponentPlayer.getId())
+                                checkersBoard.findMoveablePiecesByPlayerId(localPlayer.getId()).size(),
+                                checkersBoard.findMoveablePiecesByPlayerId(opponentPlayer.getId()).size()
                         )
                 );
             }
