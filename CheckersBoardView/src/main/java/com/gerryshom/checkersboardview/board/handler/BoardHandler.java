@@ -250,7 +250,7 @@ public class BoardHandler {
                                 checkersBoard.findMoveablePiecesByPlayerId(localPlayer.getId()).size(),
                                 checkersBoard.findMoveablePiecesByPlayerId(opponentPlayer.getId()).size(),
                                 System.currentTimeMillis(),
-                                1000L * 45
+                                checkersBoard.getGameFlowRule().getMaxTurnDurationSeconds() * 1000L
                         )
                 );
             }

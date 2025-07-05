@@ -3,13 +3,14 @@ package com.gerryshom.checkersboardview.movement.model;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class MoveSequence {
     private String opponentPlayerId;
     private String currentPlayerId;
     private List<Move> moves = new ArrayList<>();
     private int opponentPlayerMoveablePieceCount;
     private int currentPlayerMoveablePieceCount;
-    private long createdAt;
+    private Object createdAt;
     private long expiresIn;
 
     public MoveSequence deepClone() {
@@ -30,7 +31,7 @@ public class MoveSequence {
                         List<Move> moves,
                         int currentPlayerMoveablePieceCount,
                         int opponentPlayerMoveablePieceCount,
-                        long createdAt,
+                        Object createdAt,
                         long expiresIn
     ) {
         this.opponentPlayerId = opponentPlayerId;
@@ -38,6 +39,8 @@ public class MoveSequence {
         this.currentPlayerId = currentPlayerId;
         this.opponentPlayerMoveablePieceCount = opponentPlayerMoveablePieceCount;
         this.currentPlayerMoveablePieceCount = currentPlayerMoveablePieceCount;
+        this.createdAt = createdAt;
+        this.expiresIn = expiresIn;
     }
 
     public MoveSequence(String opponentPlayerId, List<Move> moves) {
@@ -51,10 +54,6 @@ public class MoveSequence {
 
     public void setExpiresIn(long expiresIn) {
         this.expiresIn = expiresIn;
-    }
-
-    public long getCreatedAt() {
-        return createdAt;
     }
 
     public void setCreatedAt(long createdAt) {

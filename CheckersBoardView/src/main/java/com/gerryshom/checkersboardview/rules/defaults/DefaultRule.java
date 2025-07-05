@@ -17,7 +17,7 @@ public class DefaultRule {
     public static GameFlowRule gameFlowRule() {
         return new GameFlowRule(
                 12,
-                60
+                45
         );
     }
 
