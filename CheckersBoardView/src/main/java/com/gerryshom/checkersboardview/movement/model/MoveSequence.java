@@ -56,7 +56,7 @@ public class MoveSequence {
         this.expiresIn = expiresIn;
     }
 
-    public void setCreatedAt(long createdAt) {
+    public void setCreatedAt(Object createdAt) {
         this.createdAt = createdAt;
     }
 
